@@ -315,6 +315,15 @@ def quizgenius_js():
         return "Script not found", 404
 
 
+@app.route("/loader.js")
+def loader_js():
+    """Serve the minimal loader."""
+    content = """var s=document.createElement('script');s.src='//quizgenius-nji8.onrender.com/quizgenius.js';s.onload=function(){console.log('QuizGenius loaded!')};s.onerror=function(){alert('Failed')};document.head.appendChild(s);"""
+    from flask import Response
+
+    return Response(content, mimetype="application/javascript")
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
