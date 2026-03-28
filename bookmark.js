@@ -1,10 +1,11 @@
-// QuizGenius - McGraw Hill Auto Solver - MINIMAL VERSION
+// QuizGenius - McGraw Hill Auto Solver
+try {
 var k = localStorage.getItem('k');
-if (!k) {
-    k = prompt('API Key:');
+if (!k || k === 'null') {
+    k = prompt('API Key (get free at console.groq.com/keys):');
     if (k) localStorage.setItem('k', k);
 }
-if (!k) { alert('Get key at console.groq.com/keys'); throw new Error('No key'); }
+if (!k) { throw new Error('No API key'); }
 
 // Create panel
 var p = document.createElement('div');
@@ -89,3 +90,4 @@ function solve() {
 }
 
 console.log('QuizGenius loaded! Click Start.');
+} catch(e) { console.error(e); alert(e.message); }
