@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download - QuizGenius</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg-primary: #030307; --bg-card: #0a0a14; --accent: #00d4aa; --accent-glow: rgba(0, 212, 170, 0.4); --text-primary: #ffffff; --text-secondary: #9ca3af; --border: #1e1e2e; --gradient-primary: linear-gradient(135deg, #00d4aa 0%, #00b894 100%); }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Outfit', sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
+        .bg-gradient { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: -1; overflow: hidden; }
+        .bg-gradient::before { content: ''; position: absolute; width: 600px; height: 600px; background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%); top: -200px; left: -200px; animation: float 20s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(50px, 50px); } }
+        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(3, 3, 7, 0.85); backdrop-filter: blur(30px); border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        .nav-inner { max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 72px; }
+        .logo { display: flex; align-items: center; gap: 12px; font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; text-decoration: none; color: var(--text-primary); }
+        .logo-icon { width: 40px; height: 40px; background: var(--gradient-primary); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; }
+        .nav-links { display: flex; gap: 32px; list-style: none; }
+        .nav-links a { color: var(--text-secondary); text-decoration: none; font-weight: 500; }
+        .nav-links a:hover { color: var(--text-primary); }
+        .container { max-width: 800px; margin: 0 auto; padding: 120px 24px 40px; }
+        h1 { font-size: 40px; margin-bottom: 16px; text-align: center; }
+        .subtitle { color: var(--text-secondary); text-align: center; margin-bottom: 40px; font-size: 18px; }
+        .download-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 24px; padding: 48px; text-align: center; }
+        .download-icon { width: 80px; height: 80px; background: var(--gradient-primary); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; }
+        .download-icon svg { width: 40px; height: 40px; }
+        .btn { display: inline-flex; align-items: center; gap: 10px; padding: 16px 32px; border-radius: 14px; font-weight: 600; font-size: 16px; text-decoration: none; cursor: pointer; border: none; transition: all 0.3s; }
+        .btn-primary { background: var(--gradient-primary); color: #000; box-shadow: 0 4px 24px var(--accent-glow); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 40px var(--accent-glow); }
+        .steps { margin-top: 48px; text-align: left; }
+        .step { display: flex; gap: 16px; margin-bottom: 24px; }
+        .step-num { width: 32px; height: 32px; background: rgba(0, 212, 170, 0.1); border: 2px solid var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--accent); flex-shrink: 0; }
+        .step-text h3 { font-size: 16px; margin-bottom: 4px; }
+        .step-text p { color: var(--text-secondary); font-size: 14px; }
+        .code { background: rgba(255,255,255,0.05); padding: 12px 16px; border-radius: 8px; font-family: monospace; font-size: 14px; margin-top: 8px; color: var(--accent); }
+        .note { margin-top: 32px; padding: 16px; background: rgba(0, 212, 170, 0.05); border: 1px solid rgba(0, 212, 170, 0.2); border-radius: 12px; color: var(--text-secondary); font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="bg-gradient"></div>
+    <nav>
+        <div class="nav-inner">
+            <a href="/" class="logo"><div class="logo-icon">Q</div>QuizGenius</a>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                {% if session.get('user_id') %}
+                <li><a href="/dashboard">Dashboard</a></li>
+                <li><a href="/logout">Logout</a></li>
+                {% else %}
+                <li><a href="/login">Login</a></li>
+                <li><a href="/register">Get Started</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Download QuizGenius</h1>
+        <p class="subtitle">The desktop app that solves your quizzes automatically</p>
+
+        <div class="download-card">
+            <div class="download-icon">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5 5 5M12 5v12"/></svg>
+            </div>
+            <a href="#" class="btn btn-primary" onclick="alert('Download will be available after deploying to Render. Sign in to your dashboard to get updates.'); return false;">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5 5 5M12 5v12"/></svg>
+                Download for Windows
+            </a>
+
+            <div class="steps">
+                <h3 style="margin-bottom: 24px; text-align: center;">How to use:</h3>
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-text">
+                        <h3>Sign up for an account</h3>
+                        <p>Create your free QuizGenius account to save your API key</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-text">
+                        <h3>Save your API key</h3>
+                        <p>Go to Settings and enter your Groq API key</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-text">
+                        <h3>Choose your method</h3>
+                        <p>Download the desktop app OR use the browser extension</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">4</div>
+                    <div class="step-text">
+                        <h3>Solve your quiz</h3>
+                        <p>Open your quiz, click Start, and watch it solve!</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 48px; padding: 32px; background: rgba(0,212,170,0.05); border: 1px solid rgba(0,212,170,0.2); border-radius: 16px;">
+                <h3 style="margin-bottom: 16px; text-align: center;">Use in Browser (Chromebook, iPad, etc.)</h3>
+                <p style="text-align: center; color: var(--text-secondary); margin-bottom: 24px;">Works on any device with a browser</p>
+                <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+                    <div>
+                        <a href="/bookmarklet" class="btn btn-primary">
+                            Bookmarklet (No Install)
+                        </a>
+                        <p style="margin-top: 8px; font-size: 12px; color: var(--text-secondary);">
+                            Works on restricted Chromebooks!
+                        </p>
+                    </div>
+                    <div>
+                        <a href="/userscript" class="btn btn-secondary" target="_blank">
+                            Userscript (Tampermonkey)
+                        </a>
+                        <p style="margin-top: 8px; font-size: 12px; color: var(--text-secondary);">
+                            More features, needs extension
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="note">
+                <strong>Note:</strong> The app runs locally on your computer. Your data stays private.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

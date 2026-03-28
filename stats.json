@@ -1,0 +1,24 @@
+{
+  "quizzes_completed": 2,
+  "questions_solved": 77,
+  "total_attempts": 88,
+  "correct_answers": 45,
+  "average_score": 58.0,
+  "time_saved_minutes": 136,
+  "history": [
+    {
+      "date": "2026-03-27T18:52:00",
+      "questions": 34,
+      "correct_first_try": 13,
+      "score": 49.0,
+      "time_saved_minutes": 68
+    },
+    {
+      "date": "2026-03-28T09:56:00",
+      "questions": 43,
+      "correct_first_try": 18,
+      "score": 64.0,
+      "time_saved_minutes": 68
+    }
+  ]
+}

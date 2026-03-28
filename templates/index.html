@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizGenius - AI Quiz Solver</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #030307;
+            --bg-card: #0a0a14;
+            --accent: #00d4aa;
+            --accent-glow: rgba(0, 212, 170, 0.4);
+            --text-primary: #ffffff;
+            --text-secondary: #9ca3af;
+            --border: #1e1e2e;
+            --gradient-primary: linear-gradient(135deg, #00d4aa 0%, #00b894 100%);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+        .bg-gradient {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            z-index: -1; overflow: hidden;
+        }
+        .bg-gradient::before {
+            content: ''; position: absolute;
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            top: -200px; left: -200px;
+            animation: float 20s ease-in-out infinite;
+        }
+        .bg-gradient::after {
+            content: ''; position: absolute;
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(124, 58, 237, 0.3) 0%, transparent 70%);
+            bottom: -100px; right: -100px;
+            animation: float 25s ease-in-out infinite reverse;
+        }
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(100px, 50px) scale(1.1); }
+            66% { transform: translate(-50px, 100px) scale(0.9); }
+        }
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            background: rgba(3, 3, 7, 0.85); backdrop-filter: blur(30px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .nav-inner {
+            max-width: 1200px; margin: 0 auto; padding: 0 24px;
+            display: flex; align-items: center; justify-content: space-between; height: 72px;
+        }
+        .logo {
+            display: flex; align-items: center; gap: 12px;
+            font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700;
+            color: var(--text-primary); text-decoration: none;
+        }
+        .logo-icon {
+            width: 40px; height: 40px; background: var(--gradient-primary);
+            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            font-weight: 800;
+        }
+        .nav-links { display: flex; gap: 32px; list-style: none; }
+        .nav-links a {
+            color: var(--text-secondary); text-decoration: none; font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--text-primary); }
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 12px 24px; border-radius: 12px; font-weight: 600; font-size: 15px;
+            text-decoration: none; cursor: pointer; border: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-primary {
+            background: var(--gradient-primary); color: #000;
+            box-shadow: 0 4px 24px var(--accent-glow);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 40px var(--accent-glow); }
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05); color: var(--text-primary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .btn-secondary:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--accent); }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+        .hero { padding: 160px 0 80px; text-align: center; }
+        .hero h1 {
+            font-family: 'Space Grotesk', sans-serif; font-size: 56px; font-weight: 800;
+            line-height: 1.1; margin-bottom: 20px;
+        }
+        .hero h1 .highlight {
+            background: linear-gradient(135deg, #00d4aa 0%, #7c3aed 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .hero p { font-size: 20px; color: var(--text-secondary); max-width: 600px; margin: 0 auto 40px; }
+        .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin: 80px 0; }
+        .step {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 20px; padding: 32px; text-align: left;
+            position: relative;
+        }
+        .step::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: var(--gradient-primary);
+        }
+        .step-number {
+            width: 40px; height: 40px; background: rgba(0, 212, 170, 0.1);
+            border: 2px solid var(--accent); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; color: var(--accent); margin-bottom: 20px;
+        }
+        .step h3 { font-size: 20px; margin-bottom: 12px; font-weight: 600; }
+        .step p { color: var(--text-secondary); font-size: 15px; }
+        .api-section {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 20px; padding: 40px; margin: 40px 0; text-align: center;
+        }
+        .api-section h2 { font-size: 28px; margin-bottom: 16px; }
+        .api-section p { color: var(--text-secondary); margin-bottom: 24px; }
+        .api-steps { display: flex; justify-content: center; gap: 40px; margin-top: 32px; flex-wrap: wrap; }
+        .api-step { display: flex; align-items: center; gap: 12px; color: var(--text-secondary); }
+        .api-step svg { color: var(--accent); }
+        footer { text-align: center; padding: 40px 0; color: var(--text-secondary); font-size: 14px; border-top: 1px solid var(--border); margin-top: 80px; }
+        .hero-buttons { display: flex; gap: 16px; justify-content: center; }
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 36px; }
+            .steps { grid-template-columns: 1fr; }
+            .nav-links { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-gradient"></div>
+    <nav>
+        <div class="nav-inner">
+            <a href="/" class="logo">
+                <div class="logo-icon">Q</div>
+                QuizGenius
+            </a>
+            <ul class="nav-links">
+                <li><a href="/download">Download</a></li>
+                <li><a href="/login">Login</a></li>
+                <li><a href="/register" class="btn btn-primary" style="padding: 8px 16px;">Get Started</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="container">
+            <h1>Solve McGraw Hill Quizzes<br><span class="highlight">Automatically</span></h1>
+            <p>AI-powered quiz assistant that solves your McGraw Hill questions instantly.</p>
+            <div class="hero-buttons">
+                <a href="/register" class="btn btn-primary">Get Started Free</a>
+                <a href="/download" class="btn btn-secondary">Download App</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="container">
+        <div class="steps">
+            <div class="step">
+                <div class="step-number">1</div>
+                <h3>Create Account</h3>
+                <p>Sign up for free and save your API key securely</p>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <h3>Download App</h3>
+                <p>Get the desktop app and connect to your account</p>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <h3>Watch It Solve</h3>
+                <p>Open your quiz, run the app, and let AI do the work</p>
+            </div>
+        </div>
+
+        <div class="api-section">
+            <h2>How It Works</h2>
+            <p>QuizGenius connects to your Chrome browser and uses AI to answer quiz questions automatically.</p>
+            <a href="/register" class="btn btn-primary">Create Free Account</a>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>QuizGenius - AI-powered quiz assistance</p>
+        </div>
+    </footer>
+</body>
+</html>

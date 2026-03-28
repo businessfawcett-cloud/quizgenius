@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizGenius Bookmarklet</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 600px; 
+            margin: 50px auto; 
+            padding: 20px;
+            background: #030307;
+            color: #fff;
+            line-height: 1.6;
+        }
+        h1 { color: #00d4aa; }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #00d4aa, #00b894);
+            color: #000;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            margin: 10px 0;
+        }
+        .code {
+            background: #1a1a2e;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            white-space: pre;
+            margin: 20px 0;
+        }
+        .steps li { margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>QuizGenius Bookmarklet</h1>
+    
+    <p>Works on ANY device - no extension needed!</p>
+    
+    <h2>Install:</h2>
+    <ol class="steps">
+        <li>Drag the button below to your bookmarks bar:</li>
+    </ol>
+    
+    <a class="btn" href="javascript:(function(){ /* QUIZGENIUS BOOKMARKLET */ var%20apiKey=localStorage.getItem('qg_api_key')||prompt('Enter%20Groq%20API%20key:');if(!apiKey)return%20alert('API%20key%20required!');localStorage.setItem('qg_api_key',apiKey);var%20isRunning=false;function%20s(){if(!isRunning)return;var%20q=document.querySelector('[data-automation-id*=%22question%22]')||document.querySelector('.question-text')||document.querySelector('h1');if(!q)return%20setTimeout(s,2000);var%20qt=q.textContent.trim();if(qt.length<10)return%20setTimeout(s,2000);var%20opts=[];document.querySelectorAll('[data-automation-id*=%22option%22],label,.option').forEach(e=>{var%20t=e.textContent.trim();if(t.length>2&&t.length<200)opts.push(t)});updateStatus('Solving:%20'+qt.substring(0,30)+'...');fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Authorization':'Bearer%20'+apiKey,'Content-Type':'application/json'},body:JSON.stringify({model:'llama-3.1-8b-instant',messages:[{role:'user',content:'Question:%20'+qt+'%0AOptions:%20'+opts.join('%0A')+'%0AWhat%20is%20the%20correct%20answer?'}],temperature:0.1})}).then(r=>r.json()).then(d=>{var%20ans=d.choices[0].message.content.trim();var%20el=Array.from(document.querySelectorAll('button,label,div')).find(e=>e.textContent.includes(ans));if(el){el.click();setTimeout(()=>{var%20n=document.querySelector('button:has-text(%22Next%22)');if(n)n.click();setTimeout(s,3000)},1000)}else{updateStatus('Found%20answer%20but%20couldnt%20click');setTimeout(s,2000)}}).catch(e=>{updateStatus('Error:%20'+e.message);setTimeout(s,2000)});}function%20updateStatus(m){var%20p=document.getElementById('qg-panel');if(p)p.querySelector('#qg-status').textContent=m;}function%20createPanel(){if(document.getElementById('qg-panel'))return;var%20p=document.createElement('div');p.id='qg-panel';p.innerHTML='<div%20style=%22position:fixed;top:20px;right:20px;z-index:99999;background:#0a0a14;border:1px%20solid#1e1e2e;border-radius:12px;padding:16px;color:#fff;font-family:sans-serif;min-width:220px;%22><div%20style=%22font-weight:700;margin-bottom:12px;font-size:16px;%22>QuizGenius</div><div%20id=qg-status%20style=%22font-size:12px;color:#9ca3af;margin-bottom:12px;%22>Ready</div><button%20onclick=%22isRunning=true;s()%22%20style=%22background:#00d4aa;color:#000;padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-weight:600;%22>Start</button><button%20onclick=%22isRunning=false%22%20style=%22background:#333;color:#fff;padding:8px 16px;border:none;border-radius:6px;cursor:pointer;margin-left:8px;%22>Stop</button></div>';document.body.appendChild(p);}createPanel();isRunning=true;s();})();">QuizGenius</a>
+    
+    <h2>Or manually:</h2>
+    <ol class="steps">
+        <li>Create a new bookmark</li>
+        <li>Name it "QuizGenius"</li>
+        <li>Paste this code in the URL field:</li>
+    </ol>
+    
+    <div class="code">javascript:(function(){
+/* QuizGenius - Auto Solve McGraw Hill */
+var apiKey = localStorage.getItem('qg_api_key') || prompt('Enter Groq API key:');
+if (!apiKey) return alert('API key required! Get one free at https://console.groq.com/keys');
+localStorage.setItem('qg_api_key', apiKey);
+
+var isRunning = false;
+
+function solve() {
+    if (!isRunning) return;
+    
+    var q = document.querySelector('[data-automation-id*="question"]') || document.querySelector('.question-text') || document.querySelector('h1');
+    if (!q) return setTimeout(solve, 2000);
+    
+    var qt = q.textContent.trim();
+    if (qt.length < 10) return setTimeout(solve, 2000);
+    
+    var opts = [];
+    document.querySelectorAll('[data-automation-id*="option"], label, .option, [class*="option"]').forEach(e => {
+        var t = e.textContent.trim();
+        if (t.length > 2 && t.length < 200) opts.push(t);
+    });
+    
+    updateStatus('Solving: ' + qt.substring(0, 30) + '...');
+    
+    fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Authorization': 'Bearer ' + apiKey,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            model: 'llama-3.1-8b-instant',
+            messages: [{
+                role: 'user',
+                content: 'Question: ' + qt + '\nOptions: ' + opts.join('\n') + '\nWhat is the correct answer?'
+            }],
+            temperature: 0.1
+        })
+    }).then(r => r.json()).then(d => {
+        var ans = d.choices[0].message.content.trim();
+        var el = Array.from(document.querySelectorAll('button, label, div')).find(e => e.textContent.includes(ans));
+        if (el) {
+            el.click();
+            setTimeout(function() {
+                var next = document.querySelector('button:has-text("Next")');
+                if (next) next.click();
+                setTimeout(solve, 3000);
+            }, 1000);
+        } else {
+            updateStatus('Found answer but couldn\'t click');
+            setTimeout(solve, 2000);
+        }
+    }).catch(function(e) {
+        updateStatus('Error: ' + e.message);
+        setTimeout(solve, 2000);
+    });
+}
+
+function updateStatus(m) {
+    var p = document.getElementById('qg-panel');
+    if (p) p.querySelector('#qg-status').textContent = m;
+}
+
+function createPanel() {
+    if (document.getElementById('qg-panel')) return;
+    var p = document.createElement('div');
+    p.id = 'qg-panel';
+    p.innerHTML = '<div style="position:fixed;top:20px;right:20px;z-index:99999;background:#0a0a14;border:1px solid #1e1e2e;border-radius:12px;padding:16px;color:#fff;font-family:sans-serif;min-width:220px;"><div style="font-weight:700;margin-bottom:12px;font-size:16px;">QuizGenius</div><div id=qg-status style="font-size:12px;color:#9ca3af;margin-bottom:12px;">Ready</div><button onclick="isRunning=true;solve()" style="background:#00d4aa;color:#000;padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-weight:600;">Start</button><button onclick="isRunning=false" style="background:#333;color:#fff;padding:8px 16px;border:none;border-radius:6px;cursor:pointer;margin-left:8px;">Stop</button></div>';
+    document.body.appendChild(p);
+}
+
+createPanel();
+isRunning = true;
+solve();
+})();</div>
+
+    <h2>How to use:</h2>
+    <ol class="steps">
+        <li>Go to your McGraw Hill quiz</li>
+        <li>Click the QuizGenius bookmark</li>
+        <li>Enter your API key (first time only)</li>
+        <li>Click Start</li>
+    </ol>
+    
+    <p><strong>No extension required!</strong> Works on school Chromebooks where extensions are blocked.</p>
+</body>
+</html>

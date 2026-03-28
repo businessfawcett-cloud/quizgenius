@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup - QuizGenius</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #030307;
+            --bg-secondary: #080810;
+            --bg-card: #0a0a14;
+            --accent: #00d4aa;
+            --accent-glow: rgba(0, 212, 170, 0.4);
+            --text-primary: #ffffff;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border: #1e1e2e;
+            --gradient-primary: linear-gradient(135deg, #00d4aa 0%, #00b894 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bg-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .bg-gradient::before {
+            content: '';
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            top: -200px;
+            left: -200px;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(100px, 50px) scale(1.1); }
+            66% { transform: translate(-50px, 100px) scale(0.9); }
+        }
+
+        .onboarding-container {
+            width: 100%;
+            max-width: 600px;
+            padding: 40px 20px;
+        }
+
+        .onboarding-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 48px;
+        }
+
+        .onboarding-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
+            margin-bottom: 32px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--gradient-primary);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 800;
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+
+        .onboarding-header h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .onboarding-header p {
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 40px;
+        }
+
+        .step-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--border);
+            transition: all 0.3s;
+        }
+
+        .step-dot.active {
+            background: var(--accent);
+            box-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        .step-dot.completed {
+            background: var(--accent);
+        }
+
+        .step-content {
+            display: none;
+        }
+
+        .step-content.active {
+            display: block;
+        }
+
+        .step-content h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+
+        .browser-option {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            margin-bottom: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .browser-option:hover {
+            border-color: var(--accent);
+        }
+
+        .browser-option.selected {
+            border-color: var(--accent);
+            background: rgba(0, 212, 170, 0.05);
+        }
+
+        .browser-option input {
+            display: none;
+        }
+
+        .browser-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: transparent;
+        }
+
+        .browser-info h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .browser-info p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .check-circle {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            margin-left: auto;
+            transition: all 0.3s;
+        }
+
+        .browser-option.selected .check-circle {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 15px;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0, 212, 170, 0.1);
+        }
+
+        .form-group select {
+            cursor: pointer;
+        }
+
+        .code-block {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 13px;
+            color: var(--accent);
+            overflow-x: auto;
+        }
+
+        .code-block code {
+            word-break: break-all;
+        }
+
+        .copy-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 24px;
+        }
+
+        .copy-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .copy-btn.copied {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 16px;
+            margin-top: 32px;
+        }
+
+        .btn-primary {
+            flex: 1;
+            padding: 16px;
+            background: var(--gradient-primary);
+            color: #000;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 24px var(--accent-glow);
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px var(--accent-glow);
+        }
+
+        .btn-secondary {
+            flex: 1;
+            padding: 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 16px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent);
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--gradient-primary);
+            border-radius: 50%;
+            margin: 0 auto 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .success-icon::after {
+            content: '';
+            width: 30px;
+            height: 15px;
+            border: 3px solid #000;
+            border-top: none;
+            border-right: none;
+            transform: rotate(-45deg);
+            margin-top: -5px;
+        }
+
+        .skip-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: var(--text-muted);
+            font-size: 14px;
+            text-decoration: none;
+        }
+
+        .skip-link:hover {
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <script>
+        if (!localStorage.getItem('loggedIn')) {
+            window.location.href = 'login.html';
+        } else if (localStorage.getItem('onboardingComplete') === 'true') {
+            window.location.href = 'dashboard.html';
+        }
+    </script>
+    <div class="bg-gradient"></div>
+
+    <div class="onboarding-container">
+        <div class="onboarding-card">
+            <div class="onboarding-header">
+                <a href="index.html" class="logo">
+                    <div class="logo-icon">Q</div>
+                    QuizGenius
+                </a>
+            </div>
+
+            <div class="step-indicator">
+                <div class="step-dot active" data-step="1"></div>
+                <div class="step-dot" data-step="2"></div>
+                <div class="step-dot" data-step="3"></div>
+                <div class="step-dot" data-step="4"></div>
+            </div>
+
+            <div class="step-content active" data-step="1">
+                <h2>Choose your browser</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 24px; font-size: 14px;">Select the browser you'll use to take quizzes</p>
+                
+                <label class="browser-option selected" onclick="selectBrowser(this, 'chrome')">
+                    <input type="radio" name="browser" value="chrome" checked>
+                    <div class="browser-icon">
+                        <img src="Chrome.png" alt="Chrome" style="width:40px;height:40px;object-fit:contain;">
+                    </div>
+                    <div class="browser-info">
+                        <h3>Google Chrome</h3>
+                        <p>Recommended - Best compatibility</p>
+                    </div>
+                    <div class="check-circle"></div>
+                </label>
+
+                <label class="browser-option" onclick="selectBrowser(this, 'edge')">
+                    <input type="radio" name="browser" value="edge">
+                    <div class="browser-icon">
+                        <img src="Edge.png" alt="Edge" style="width:40px;height:40px;object-fit:contain;">
+                    </div>
+                    <div class="browser-info">
+                        <h3>Microsoft Edge</h3>
+                        <p>Good alternative</p>
+                    </div>
+                    <div class="check-circle"></div>
+                </label>
+
+                <div class="btn-row">
+                    <button class="btn-primary" onclick="nextStep(2)">Continue</button>
+                </div>
+            </div>
+
+            <div class="step-content" data-step="2">
+                <h2>Launch the App</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 24px; font-size: 14px;">Download and run QuizGenius - it will automatically open your browser with the right settings</p>
+
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; padding: 32px; text-align: center; margin-bottom: 24px;">
+                    <div style="width: 64px; height: 64px; background: var(--gradient-primary); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+                        <div style="width: 24px; height: 24px; background: #000; border-radius: 6px;"></div>
+                    </div>
+                    <h3 style="font-size: 18px; margin-bottom: 8px;">QuizGenius.exe</h3>
+                    <p style="color: var(--text-muted); font-size: 13px;">The app handles everything for you</p>
+                </div>
+
+                <div style="background: rgba(0, 212, 170, 0.1); border: 1px solid rgba(0, 212, 170, 0.2); border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+                    <p style="color: var(--accent); font-size: 14px; font-weight: 500;">
+                        Just download the app from the dashboard and run it. It will automatically open Chrome with debugging enabled - no commands needed!
+                    </p>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn-secondary" onclick="prevStep(1)">Back</button>
+                    <button class="btn-primary" onclick="nextStep(3)">Continue</button>
+                </div>
+            </div>
+
+            <div class="step-content" data-step="3">
+                <h2>Setup API Key</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 24px; font-size: 14px;">Enter your Groq API key (free) to power the quiz solving</p>
+
+                <div class="form-group">
+                    <label>Groq API Key</label>
+                    <input type="password" id="api-key" placeholder="gsk_...">
+                    <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
+                        Get a free key at <a href="https://console.groq.com/keys" target="_blank" style="color: var(--accent);">console.groq.com/keys</a>
+                    </p>
+                </div>
+
+                <div class="form-group">
+                    <label>Platform (optional)</label>
+                    <select id="platform-select">
+                        <option value="">Select a platform</option>
+                        <option value="mcgraw">McGraw Hill Connect</option>
+                        <option value="canvas">Canvas</option>
+                        <option value="blackboard">Blackboard</option>
+                        <option value="moodle">Moodle</option>
+                        <option value="brightspace">D2L Brightspace</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn-secondary" onclick="prevStep(2)">Back</button>
+                    <button class="btn-primary" onclick="nextStep(4)">Continue</button>
+                </div>
+            </div>
+
+            <div class="step-content" data-step="4">
+                <div class="success-icon"></div>
+                <h2 style="text-align: center;">You're all set!</h2>
+                <p style="color: var(--text-secondary); text-align: center; font-size: 15px; line-height: 1.6; margin-bottom: 32px;">
+                    QuizGenius is ready to use. Launch the app and start acing your quizzes!
+                </p>
+
+                <a href="dashboard.html" class="btn-primary" onclick="localStorage.setItem('onboardingComplete', 'true');">Go to Dashboard</a>
+                <a href="login.html" class="skip-link">Sign out</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+
+        function selectBrowser(el, browser) {
+            document.querySelectorAll('.browser-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            el.classList.add('selected');
+
+            const launchCode = document.getElementById('launch-code');
+            if (browser === 'chrome') {
+                launchCode.textContent = 'chrome.exe --remote-debugging-port=9222 --user-data-dir="C:\\chrome-debug"';
+            } else if (browser === 'edge') {
+                launchCode.textContent = 'msedge.exe --remote-debugging-port=9222 --user-data-dir="C:\\edge-debug"';
+            }
+        }
+
+        function nextStep(step) {
+            // First show the step, then validate if needed
+            if (step === 3) {
+                // Show step 3 first
+                showStep(3);
+                return; // Don't validate yet - let user see the form
+            }
+            
+            if (step === 4) {
+                // Validate API key when moving from step 3 to 4
+                const apiKey = document.getElementById('api-key').value.trim();
+                if (!apiKey) {
+                    alert('Please enter your Groq API key');
+                    return;
+                }
+                if (!apiKey.startsWith('gsk_')) {
+                    alert('Invalid API key format. It should start with "gsk_"');
+                    return;
+                }
+                // Save API key to localStorage
+                localStorage.setItem('groqApiKey', apiKey);
+            }
+
+            showStep(step);
+        }
+
+        function showStep(step) {
+            document.querySelectorAll('.step-dot').forEach(dot => {
+                dot.classList.remove('active', 'completed');
+            });
+
+            for (let i = 1; i < step; i++) {
+                document.querySelector(`.step-dot[data-step="${i}"]`).classList.add('completed');
+            }
+            document.querySelector(`.step-dot[data-step="${step}"]`).classList.add('active');
+
+            document.querySelectorAll('.step-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.querySelector(`.step-content[data-step="${step}"]`).classList.add('active');
+
+            currentStep = step;
+        }
+
+        function prevStep(step) {
+            document.querySelectorAll('.step-dot').forEach(dot => {
+                dot.classList.remove('active');
+            });
+            document.querySelector(`.step-dot[data-step="${step}"]`).classList.add('active');
+
+            document.querySelectorAll('.step-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.querySelector(`.step-content[data-step="${step}"]`).classList.add('active');
+
+            currentStep = step;
+        }
+
+        function copyCode() {
+            const code = document.getElementById('launch-code').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                btn.classList.add('copied');
+                btn.innerHTML = '<span>Copied!</span>';
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    btn.innerHTML = '<span class="copy-icon"></span> Copy to clipboard';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

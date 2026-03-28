@@ -1,0 +1,352 @@
+{
+  "1460792764482205897": {
+    "question": "Which of the following are symptoms associated with riboflavin deficiency?",
+    "type": "Multiple Select",
+    "our_answer": "our_answer_here",
+    "correct_answer": "confusion, sensitivity to the sun",
+    "options": [
+      "confusion",
+      "sensitivity to the sun",
+      "diarrhea",
+      "dermatitis"
+    ],
+    "timestamp": "2026-03-27T17:52:35.053266",
+    "times_wrong": 1
+  },
+  "-1477413445290454577": {
+    "question": "Which food groups are highest in riboflavin?",
+    "type": "Multiple Select",
+    "our_answer": "our_answer_here",
+    "correct_answer": "Protein, Grains",
+    "options": [
+      "Fruits",
+      "Protein",
+      "Grains",
+      "Dairy"
+    ],
+    "timestamp": "2026-03-27T17:53:15.803456",
+    "times_wrong": 1
+  },
+  "3600855001343620193": {
+    "question": "The federal enrichment program was first introduced in the 1930s to combat which nutrient deficiency diseases?",
+    "type": "Multiple Select",
+    "our_answer": "our_answer_here",
+    "correct_answer": "Iron-deficiency anemia., Pellagra",
+    "options": [
+      "Scurvy.",
+      "Rickets.",
+      "Iron-deficiency anemia.",
+      "Pellagra."
+    ],
+    "timestamp": "2026-03-27T17:53:53.946141",
+    "times_wrong": 1
+  },
+  "4081672553958966340": {
+    "question": "Federal regulations require the enrichment of refined grain products with:",
+    "type": "Multiple Select",
+    "our_answer": "our_answer_here",
+    "correct_answer": "iron, thiamin, niacin",
+    "options": [
+      "vitamin B-6.",
+      "iron.",
+      "thiamin.",
+      "niacin."
+    ],
+    "timestamp": "2026-03-27T16:10:42.530230",
+    "times_wrong": 1
+  },
+  "6403317380953156329": {
+    "question": "B vitamins are required for the chemical reactions that yield energy from:",
+    "type": "Multiple Select",
+    "our_answer": "our_answer_here",
+    "correct_answer": "carbohydrates, lipids, proteins",
+    "options": [
+      "carbohydrates.",
+      "lipids.",
+      "proteins",
+      "minerals."
+    ],
+    "timestamp": "2026-03-27T15:52:50.963959",
+    "times_wrong": 1
+  },
+  "-557620708127378250": {
+    "question": "Which of the following cooking methods best preserves B vitamins?",
+    "type": "Multiple Select",
+    "our_answer": "our_answer_here",
+    "correct_answer": "Steaming, Microwaving, Stir-frying",
+    "options": [
+      "Steaming",
+      "Microwaving",
+      "Stir-frying",
+      "Boiling"
+    ],
+    "timestamp": "2026-03-27T16:07:37.760348",
+    "times_wrong": 1
+  },
+  "669501001828836096": {
+    "question": "Which of the following B vitamins plays a role in the body's antioxidant defense system as a coenzyme for glutathione peroxidase?",
+    "type": "Multiple Choice",
+    "our_answer": "our_answer_here",
+    "correct_answer": "Riboflavin",
+    "options": [
+      "Vitamin B-6",
+      "Thiamin",
+      "Vitamin B-12",
+      "Riboflavin"
+    ],
+    "timestamp": "2026-03-27T17:55:44.615497",
+    "times_wrong": 1
+  },
+  "-3609387477508481837": {
+    "question": "The inflammation of the tongue that is associated with riboflavin deficiency is called:",
+    "type": "Multiple Choice",
+    "our_answer": "our_answer_here",
+    "correct_answer": "glossitis",
+    "options": [
+      "petechiae.",
+      "glossitis.",
+      "angular cheilitis.",
+      "scurvy."
+    ],
+    "timestamp": "2026-03-27T17:56:23.265233",
+    "times_wrong": 1
+  },
+  "-5415628246844349884": {
+    "question": "Which of the following are characteristics of pellagra, the deficiency disease for niacin?",
+    "type": "Multiple Select",
+    "our_answer": "our_answer_here",
+    "correct_answer": "dementia., diarrhea",
+    "options": [
+      "dementia.",
+      "diarrhea.",
+      "dermatitis.",
+      "diabetes."
+    ],
+    "timestamp": "2026-03-27T17:58:42.081367",
+    "times_wrong": 1
+  },
+  "4140203675841375271": {
+    "question": "What are two functions of riboflavin?",
+    "type": "Multiple Select",
+    "our_answer": "our_answer_here",
+    "correct_answer": "Assisting antioxidant reactions., Release of energy from fatty acids",
+    "options": [
+      "Assisting antioxidant reactions.",
+      "Preventing pernicious anemia.",
+      "Release of energy from fatty acids.",
+      "Preventing birth defects."
+    ],
+    "timestamp": "2026-03-27T17:59:20.381073",
+    "times_wrong": 1
+  },
+  "-8612318300278037049": {
+    "question": "A riboflavin-poor diet can lead to:",
+    "type": "Multiple Select",
+    "our_answer": "our_answer_here",
+    "correct_answer": "angular cheilitis., glossitis",
+    "options": [
+      "hypertension.",
+      "angular cheilitis.",
+      "pellagra.",
+      "glossitis."
+    ],
+    "timestamp": "2026-03-27T17:59:58.501028",
+    "times_wrong": 1
+  },
+  "4136669051889115804": {
+    "question": "The coenzyme form of pantothenic acid participates in:",
+    "type": "Multiple Select",
+    "our_answer": "our_answer_here",
+    "correct_answer": "fatty acid synthesis., the release of energy from carbohydrates, fats, and proteins",
+    "options": [
+      "fatty acid synthesis.",
+      "the addition of carbon dioxide to other compounds.",
+      "antioxidant systems.",
+      "the release of energy from carbohydrates, fats, and proteins."
+    ],
+    "timestamp": "2026-03-27T18:02:09.617050",
+    "times_wrong": 1
+  },
+  "3007903652436956833": {
+    "question": "Which of the following are good sources of niacin?\u00a0\n\n(More than one answer may be correct)",
+    "type": "Multiple Select",
+    "our_answer": "our_answer_here",
+    "correct_answer": "chicken, fortified cereal",
+    "options": [
+      "chicken",
+      "butter",
+      "corn",
+      "fortified cereal"
+    ],
+    "timestamp": "2026-03-27T18:03:38.732025",
+    "times_wrong": 1
+  },
+  "-35727269341059384": {
+    "question": "Canned tuna, chicken breast, and fortified breakfast cereal are good food sources of:",
+    "type": "Multiple Choice",
+    "our_answer": "our_answer_here",
+    "correct_answer": "niacin",
+    "options": [
+      "calcium.",
+      "manganese.",
+      "vitamin C.",
+      "niacin."
+    ],
+    "timestamp": "2026-03-27T18:05:54.614476",
+    "times_wrong": 1
+  },
+  "-6744224992928936058": {
+    "question": "The coenzyme form of pantothenic acid participates in:",
+    "type": "Multiple Select",
+    "our_answer": "our_answer_here",
+    "correct_answer": "fatty acid synthesis., the release of energy from carbohydrates, fats, and proteins",
+    "options": [
+      "the addition of carbon dioxide to other compounds.",
+      "antioxidant systems.",
+      "fatty acid synthesis.",
+      "the release of energy from carbohydrates, fats, and proteins."
+    ],
+    "timestamp": "2026-03-27T18:15:53.867751",
+    "times_wrong": 1
+  },
+  "-8805518730246631557": {
+    "question": "Numbness and burning sensation in the hands and feet are signs of \nBlank\n______ deficiency.",
+    "type": "Multiple Choice",
+    "our_answer": "our_answer_here",
+    "correct_answer": "pantothenic acid",
+    "options": [
+      "pantothenic acid",
+      "vitamin C",
+      "iron",
+      "vitamin K"
+    ],
+    "timestamp": "2026-03-27T18:16:36.763663",
+    "times_wrong": 1
+  },
+  "9100403859501151684": {
+    "question": "Which of the following body systems are affected by vitamin B-6 deficiency? More than one answer may be correct.",
+    "type": "Multiple Select",
+    "our_answer": "our_answer_here",
+    "correct_answer": "Immune, Nervous",
+    "options": [
+      "Immune",
+      "Nervous",
+      "Cardiovascular",
+      "Reproductive"
+    ],
+    "timestamp": "2026-03-27T18:17:51.820997",
+    "times_wrong": 1
+  },
+  "7439159412510704092": {
+    "question": "Choose the true statements about pantothenic acid deficiency.",
+    "type": "Multiple Select",
+    "our_answer": "our_answer_here",
+    "correct_answer": "A pantothenic acid deficiency may be unrecognizable",
+    "options": [
+      "Symptoms would be hidden among deficiencies of thiamin, riboflavin, vitamin B-6, and folate.",
+      "Pantothenic acid deficiency is very common.",
+      "A pantothenic acid deficiency may be unrecognizable.",
+      "Might occur in alcohol use disorders along with a nutrient-deficient diet."
+    ],
+    "timestamp": "2026-03-27T18:19:23.611358",
+    "times_wrong": 1
+  },
+  "8443321196720751571": {
+    "question": "Athletes require more vitamin B-6 because they process more:",
+    "type": "Multiple Select",
+    "our_answer": "our_answer_here",
+    "correct_answer": "glycogen., protein",
+    "options": [
+      "oxygen.",
+      "glycogen.",
+      "protein.",
+      "homocysteine."
+    ],
+    "timestamp": "2026-03-27T18:20:28.581171",
+    "times_wrong": 1
+  },
+  "-5615269968633014265": {
+    "question": "Which of the following are symptoms of biotin deficiency?",
+    "type": "Multiple Select",
+    "our_answer": "our_answer_here",
+    "correct_answer": "Nausea, Decreased appetite",
+    "options": [
+      "Nausea",
+      "Decreased appetite",
+      "Constipation",
+      "Vomiting"
+    ],
+    "timestamp": "2026-03-27T18:23:27.411257",
+    "times_wrong": 1
+  },
+  "-7922497052743758256": {
+    "question": "Which of the following are symptoms of vitamin B-6 deficiency?",
+    "type": "Multiple Select",
+    "our_answer": "our_answer_here",
+    "correct_answer": "Vomiting, Depression",
+    "options": [
+      "Vomiting",
+      "Hypertension",
+      "Depression",
+      "Anemia"
+    ],
+    "timestamp": "2026-03-27T18:35:54.002965",
+    "times_wrong": 1
+  },
+  "2328624317452264855": {
+    "question": "Which of the following are rich sources of iodine?",
+    "type": "Multiple Select",
+    "our_answer": "our_answer_here",
+    "correct_answer": "Seafood, Dairy products",
+    "options": [
+      "Fresh fruits",
+      "Seafood",
+      "Fresh vegetables",
+      "Dairy products"
+    ],
+    "timestamp": "2026-03-27T18:51:09.489761",
+    "times_wrong": 1
+  },
+  "5160628794569376070": {
+    "question": "Choose when it is appropriate to seek medical advice before beginning an exercise program.",
+    "type": "Multiple Select",
+    "our_answer": "our_answer_here",
+    "correct_answer": "If you have been inactive for many years, Females 55 years or older",
+    "options": [
+      "If you have been inactive for many years",
+      "College student deciding to begin to train for a marathon",
+      "Females 55 years or older",
+      "Males 45 years or older"
+    ],
+    "timestamp": "2026-03-28T10:39:16.203862",
+    "times_wrong": 1
+  },
+  "5919331124726600355": {
+    "question": "Each of the following individuals plans to start a new fitness program. Which of them should seek a physician's advice before they begin?",
+    "type": "Multiple Select",
+    "our_answer": "our_answer_here",
+    "correct_answer": "Curtis is a 48-year-old male who wants to start jogging to lose weight",
+    "options": [
+      "Shelly is a 36-year-old female who wants to try aerobics classes to help lower her hypertension.",
+      "Curtis is a 48-year-old male who wants to start jogging to lose weight.",
+      "Althea is a 60-year-old female who wants to work out with a personal trainer to get back into shape after hip-replacement surgery.",
+      "Brandon is a 31-year-old male who wants to train for a triathlon."
+    ],
+    "timestamp": "2026-03-28T10:40:55.375631",
+    "times_wrong": 1
+  },
+  "334750707600189116": {
+    "question": "An effective fitness goal should be:",
+    "type": "Multiple Select",
+    "our_answer": "our_answer_here",
+    "correct_answer": "measurable., realistic",
+    "options": [
+      "rigid.",
+      "measurable.",
+      "realistic.",
+      "unattainable"
+    ],
+    "timestamp": "2026-03-28T10:41:36.924741",
+    "times_wrong": 1
+  }
+}
