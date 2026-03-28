@@ -299,6 +299,22 @@ def bookmarklet_template():
         return "Bookmarklet not found", 404
 
 
+@app.route("/quizgenius.js")
+def quizgenius_js():
+    """Serve the quiz solver JavaScript."""
+    import os
+
+    js_path = os.path.join(os.path.dirname(__file__), "bookmark.js")
+    try:
+        with open(js_path, "r") as f:
+            content = f.read()
+        from flask import Response
+
+        return Response(content, mimetype="application/javascript")
+    except:
+        return "Script not found", 404
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
