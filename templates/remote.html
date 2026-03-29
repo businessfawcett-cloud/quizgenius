@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QuizGenius Remote - Solve on Your Phone, View on Chromebook</title>
+    <style>
+        body { font-family: sans-serif; max-width: 500px; margin: 50px auto; padding: 20px; background: #030307; color: #fff; }
+        h1 { color: #00d4aa; }
+        .card { background: #111; padding: 20px; border-radius: 12px; margin: 20px 0; }
+        input { padding: 12px; width: 100%; margin: 10px 0; background: #222; border: 1px solid #444; color: #fff; border-radius: 8px; }
+        .btn { background: #00d4aa; color: #000; padding: 14px 28px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; }
+        .step { background: #1a1a1a; padding: 15px; border-radius: 8px; margin: 10px 0; }
+        .step-num { color: #00d4aa; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>QuizGenius Remote</h1>
+    <p>Solve quizzes on your phone, view on Chromebook!</p>
+    
+    <div class="card">
+        <h3>How it works:</h3>
+        <div class="step">
+            <span class="step-num">1.</span> Go to your McGraw Hill quiz on YOUR PHONE
+        </div>
+        <div class="step">
+            <span class="step-num">2.</span> Open this page and enter your API key:
+            <input type="text" id="apiKey" placeholder="gsk_...">
+        </div>
+        <div class="step">
+            <span class="step-num">3.</span> Click "Start Remote Session"
+        </div>
+        <div class="step">
+            <span class="step-num">4.</span> Your phone will solve the quiz while you watch on Chromebook!
+        </div>
+        
+        <button class="btn" onclick="startSession()">Start Remote Session</button>
+    </div>
+    
+    <div id="status" style="display:none">
+        <h3>Session Status:</h3>
+        <p id="statusText" style="color: #00d4aa;">Connecting...</p>
+    </div>
+    
+    <script>
+    function startSession() {
+        var key = document.getElementById('apiKey').value.trim();
+        if (!key) { alert('Enter API key'); return; }
+        
+        // Store key and signal ready
+        localStorage.setItem('qg_remote_key', key);
+        localStorage.setItem('qg_remote_ready', 'true');
+        
+        document.getElementById('status').style.display = 'block';
+        document.getElementById('statusText').innerText = 'Ready! Now go to your phone and refresh the quiz page.';
+    }
+    </script>
+</body>
+</html>

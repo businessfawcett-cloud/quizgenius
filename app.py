@@ -330,6 +330,12 @@ def chromebook():
     return render_template("chromebook.html")
 
 
+@app.route("/remote")
+def remote():
+    """Serve the remote solver page."""
+    return render_template("remote.html")
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
