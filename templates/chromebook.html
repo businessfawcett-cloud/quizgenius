@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QuizGenius - Get Your Custom Solver</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; background: #030307; color: #fff; }
+        h1 { color: #00d4aa; }
+        input { padding: 10px; width: 100%; margin: 10px 0; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px; }
+        .btn { background: #00d4aa; color: #000; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        code { background: #222; padding: 10px; display: block; margin: 10px 0; border-radius: 5px; word-break: break-all; }
+    </style>
+</head>
+<body>
+    <h1>QuizGenius - Chromebook Solver</h1>
+    <p>Enter your API key to get your custom solver:</p>
+    
+    <input type="text" id="apiKey" placeholder="gsk_..." value="">
+    <button class="btn" onclick="generate()">Get My Solver</button>
+    
+    <div id="result" style="display:none">
+        <h3>Instructions:</h3>
+        <ol>
+            <li>Go to your McGraw Hill quiz</li>
+            <li>Press <strong>F12</strong> to open Developer Tools</li>
+            <li>Click the <strong>Console</strong> tab</li>
+            <li>Copy and paste the code below:</li>
+        </ol>
+        <code id="code"></code>
+    </div>
+    
+    <script>
+    function generate() {
+        var key = document.getElementById('apiKey').value.trim();
+        if (!key) { alert('Please enter API key'); return; }
+        
+        // Create a self-contained script with the key embedded
+        var script = "var k='" + key + "';var p=document.createElement('div');p.style.cssText='position:fixed;top:10px;right:10px;z-index:99999;background:#222;padding:15px;border-radius:10px;color:#fff;min-width:180px;';p.innerHTML='<b style=\"color:#0f8\">QuizGenius</b><br><span id=s>Ready</span><br><button id=st style=\"background:#0f8;padding:8px;border:none;border-radius:5px;cursor:pointer\">Start</button>';document.body.appendChild(p);var r=false;document.getElementById('st').onclick=function(){r=true;solve()};function solve(){if(!r)return;var q=document.querySelector('div.prompt');if(!q){document.getElementById('s').innerText='No Q';setTimeout(solve,2000);return}var qt=q.textContent.trim();var opts=[];document.querySelectorAll('span.choiceText.rs_preserve > p').forEach(function(e){var t=e.textContent.trim();if(t)opts.push(t)});if(!opts.length){document.getElementById('s').innerText='No opts';setTimeout(solve,2000);return}document.getElementById('s').innerText='Sending...';var xhr=new XMLHttpRequest();xhr.open('POST','https://api.groq.com/openai/v1/chat/completions',true);xhr.setRequestHeader('Content-Type','application/json');xhr.setRequestHeader('Authorization','Bearer '+k);xhr.onload=function(){if(xhr.status===200){var d=JSON.parse(xhr.responseText);var a=d.choices[0].message.content.trim();document.getElementById('s').innerText='Ans: '+a;var found=-1;for(var i=0;i<opts.length;i++){if(a.toLowerCase().includes(opts[i].toLowerCase())){found=i;break}}if(found>=0){document.querySelectorAll('span.choiceText.rs_preserve > p')[found].click();document.getElementById('s').innerText='Clicked!';setTimeout(function(){document.querySelectorAll('button,span,div').forEach(function(b){var t=b.textContent.trim().toLowerCase();if(t==='high'||t==='medium'||t==='low')b.click()});setTimeout(function(){document.querySelectorAll('button').forEach(function(b){if(b.textContent.includes('Next'))b.click()});if(r)setTimeout(solve,3000)},1500)},1000)}else{document.getElementById('s').innerText='No';if(r)setTimeout(solve,2000)}}};xhr.onerror=function(){document.getElementById('s').innerText='Err';if(r)setTimeout(solve,2000)};xhr.send(JSON.stringify({model:'llama-3.1-8b-instant',messages:[{role:'user',content:'Q: '+qt+' Options: '+opts.join(' | ')+' Just say option.'}],temperature:0.1}))}";
+        
+        var fullCode = "javascript:" + script;
+        
+        document.getElementById('result').style.display = 'block';
+        document.getElementById('code').textContent = fullCode;
+    }
+    </script>
+</body>
+</html>

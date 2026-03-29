@@ -324,6 +324,12 @@ def loader_js():
     return Response(content, mimetype="application/javascript")
 
 
+@app.route("/chromebook")
+def chromebook():
+    """Serve the Chromebook solver page."""
+    return render_template("chromebook.html")
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
