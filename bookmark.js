@@ -19,20 +19,18 @@
     document.getElementById('st').onclick = function() { running = true; solve(); };
     
     function getQuestionType() {
-        var h = document.querySelector('h1, h2, h3');
-        var text = h ? h.textContent : '';
-        var body = document.body.textContent;
+        var body = document.body.textContent.toLowerCase();
         
-        if (text.toLowerCase().includes('matching') || body.toLowerCase().includes('drag and drop')) return 'matching';
-        if (text.toLowerCase().includes('multiple choice')) return 'multiple_choice';
-        if (text.toLowerCase().includes('multiple select')) return 'multi_select';
-        if (text.toLowerCase().includes('fill') || body.includes('______')) return 'fill_blank';
-        if (text.toLowerCase().includes('ordering') || text.toLowerCase().includes('rank')) return 'ordering';
-        if (text.toLowerCase().includes('short answer')) return 'short_answer';
-        if (text.toLowerCase().includes('essay')) return 'essay';
-        if (text.toLowerCase().includes('true or false')) return 'true_false';
-        if (text.toLowerCase().includes('true false')) return 'true_false';
-        if (text.toLowerCase().includes('true') && text.toLowerCase().includes('false')) return 'true_false';
+        if (body.includes('drag and drop')) return 'matching';
+        if (body.includes('true or false') || body.includes('true/false') || body.includes('true false')) return 'true_false';
+        if (body.includes('multiple choice')) return 'multiple_choice';
+        if (body.includes('multiple select')) return 'multi_select';
+        if (body.includes('fill') || body.includes('______')) return 'fill_blank';
+        if (body.includes('ordering') || body.includes('rank the following')) return 'ordering';
+        if (body.includes('short answer')) return 'short_answer';
+        if (body.includes('essay')) return 'essay';
+        if (body.includes('matching question')) return 'matching';
+        
         return 'unknown';
     }
     
