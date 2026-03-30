@@ -155,7 +155,40 @@
     }
     
     function submitConfidence() {
-        setTimeout(function() { clickElement('high') || clickElement('medium') || clickElement('low'); }, 500);
+        setTimeout(function() { 
+            // Try multiple selectors for confidence buttons
+            var clicked = false;
+            
+            // Try to find buttons with high/medium/low
+            var allEls = document.querySelectorAll('button, span, div, label, p');
+            for (var i = 0; i < allEls.length; i++) {
+                var t = allEls[i].textContent.trim().toLowerCase();
+                if (t === 'high' || t === 'medium' || t === 'low') {
+                    try {
+                        allEls[i].click();
+                        clicked = true;
+                        break;
+                    } catch(e) {}
+                }
+            }
+            
+            if (!clicked) {
+                // Try finding by looking for confidence-related text nearby
+                var body = document.body.textContent;
+                if (body.indexOf('Rate your confidence') > -1) {
+                    // Confidence buttons should be nearby
+                    for (var i = 0; i < allEls.length; i++) {
+                        var t = allEls[i].textContent.trim().toLowerCase();
+                        if (t === 'high' || t === 'medium' || t === 'low') {
+                            try {
+                                allEls[i].click();
+                                break;
+                            } catch(e) {}
+                        }
+                    }
+                }
+            }
+        }, 800);
     }
     
     function clickNext() {
@@ -462,9 +495,12 @@
                 if (trueBtn) trueBtn.click();
             }
             
-            submitConfidence();
-            clickNext();
-            setTimeout(solve, 3000);
+            // Wait and click confidence
+            setTimeout(function() {
+                submitConfidence();
+                clickNext();
+                setTimeout(solve, 3000);
+            }, 1000);
         };
         
         xhr.ontimeout = function() {
