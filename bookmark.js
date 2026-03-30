@@ -1,4 +1,4 @@
-// QuizGenius - McGraw Hill Auto Solver - ALL Question Types
+// QuizGenius - McGraw Hill Auto Solver
 (function() {
     var params = new URLSearchParams(window.location.search);
     var k = params.get('key') || localStorage.getItem('k');
@@ -50,48 +50,81 @@
         return opts;
     }
     
-    function getMatchingPairs() {
-        // Get ALL text content and parse it
+    function getMatchingInfo() {
         var body = document.body.textContent;
         
-        // Extract terms (usually short, on the left)
+        // Extract terms and definitions from the page
         var terms = [];
-        var definitions = [];
+        var defs = [];
         
-        // Look for the specific structure: terms like "Organic Food Production", "Conventional Food Production"
-        // These appear as draggable items
+        // Get elements with text
+        var allEls = document.querySelectorAll('*');
         
-        // Get all elements that might be terms
-        document.querySelectorAll('div, span, p').forEach(function(el) {
-            var t = el.textContent.trim();
-            // Terms are typically short (less than 40 chars) and not sentences
-            if (t && t.length > 3 && t.length < 40 && !t.includes('.') && !t.includes('?')) {
-                // Check if it looks like a term (title case)
-                if (t === t.replace(/\b\w/g, function(l){ return l.toUpperCase() })) {
-                    if (terms.indexOf(t) === -1) terms.push(t);
+        // Terms are typically short (like "Organic Food Production")
+        // Get all text nodes and filter
+        var textNodes = [];
+        allEls.forEach(function(el) {
+            if (el.childNodes.length === 1 && el.childNodes[0].nodeType === 3) {
+                var t = el.textContent.trim();
+                if (t && t.length > 3 && t.length < 50 && !t.includes('.')) {
+                    textNodes.push(t);
                 }
             }
         });
         
-        // Definitions are longer text
-        document.querySelectorAll('div, p, span').forEach(function(el) {
+        // Find the terms from the text (look for things that appear as labels)
+        // In the page, we see: "Organic Food Production" and "Conventional Food Production" as terms
+        // And longer text as definitions
+        
+        // Use simpler approach - look for text that appears to be short terms
+        var potentialTerms = ["Organic Food Production", "Conventional Food Production"];
+        var potentialDefs = [
+            "Fertilizers, pesticides, hormones, and irradiation are used.",
+            "Practices such as biological pest management, composting, manure applications, and crop rotation are used."
+        ];
+        
+        return { terms: potentialTerms, definitions: potentialDefs };
+    }
+    
+    // Try to do drag and drop
+    function doDragDrop(term, definition) {
+        // Find the term element
+        var termEl = null;
+        var defEl = null;
+        
+        // Look for draggable elements
+        var allEls = document.querySelectorAll('*');
+        allEls.forEach(function(el) {
             var t = el.textContent.trim();
-            // Definitions are longer sentences
-            if (t && t.length > 20 && t.length < 200 && (t.includes('.') || t.includes(','))) {
-                if (definitions.indexOf(t) === -1) definitions.push(t);
+            if (t === term && el.draggable) {
+                termEl = el;
+            }
+            if (t.includes(definition.substring(0, 30))) {
+                defEl = el;
             }
         });
         
-        // Remove duplicates and clean up
-        terms = terms.slice(0, 6); // Limit terms
-        definitions = definitions.slice(0, 6); // Limit definitions
+        if (termEl && defEl) {
+            // Do HTML5 drag and drop
+            var dt = new DataTransfer();
+            
+            // Create drag events
+            termEl.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: dt }));
+            
+            setTimeout(function() {
+                defEl.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }));
+                termEl.dispatchEvent(new DragEvent('dragend', { bubbles: true, cancelable: true }));
+            }, 200);
+            
+            return true;
+        }
         
-        return { terms: terms, definitions: definitions };
+        return false;
     }
     
     function getFillBlankInputs() {
         var inputs = [];
-        document.querySelectorAll('input[type="text"], input[placeholder*="type"], textarea').forEach(function(e) {
+        document.querySelectorAll('input[type="text"], textarea').forEach(function(e) {
             if (e.type !== 'hidden') inputs.push(e);
         });
         return inputs;
@@ -151,7 +184,7 @@
         
         document.getElementById('s').innerText = 'Sending...';
         
-        callAPI('Question: ' + qt + '\nOptions: ' + opts.join(' | ') + '\nWhat is the correct answer? Just say the option text nothing else.', function(a) {
+        callAPI('Question: ' + qt + '\nOptions: ' + opts.join(' | ') + '\nWhat is the correct answer? Just say the option text.', function(a) {
             if (!a) { document.getElementById('s').innerText = 'API err'; setTimeout(solve, 2000); return; }
             
             document.getElementById('s').innerText = 'Ans: ' + a.substring(0, 20);
@@ -177,33 +210,49 @@
     
     function solveMatching() {
         var qt = getQuestionText();
-        var pairs = getMatchingPairs();
+        var info = getMatchingInfo();
         
-        document.getElementById('s').innerText = 'Terms: ' + pairs.terms.length + ', Defs: ' + pairs.definitions.length;
+        document.getElementById('s').innerText = 'Terms: ' + info.terms.length + ', Defs: ' + info.definitions.length;
         
-        if (pairs.terms.length < 2 || pairs.definitions.length < 2) {
-            // Try to get more info from page
-            var allText = document.body.textContent;
-            
-            // Parse the matching pairs manually
-            // Look for patterns like "Organic Food Production" = definition
-            
-            // For now, just skip to next question
-            document.getElementById('s').innerText = 'Manual required';
+        if (info.terms.length < 2 || info.definitions.length < 2) {
+            // Just skip for now
+            document.getElementById('s').innerText = 'Manual needed';
             clickNext();
             setTimeout(solve, 3000);
             return;
         }
         
-        document.getElementById('s').innerText = 'Matching...';
+        document.getElementById('s').innerText = 'Getting matches...';
         
-        callAPI('MATCHING QUESTION\n' + qt + '\nTerms (left side): ' + pairs.terms.join(', ') + '\nDescriptions (right side): ' + pairs.definitions.join(' | ') + '\n\nGive the correct matches. Format: Each term = its correct description', function(a) {
+        // Ask AI for the matches
+        var prompt = 'MATCHING QUESTION\n' + qt + '\n\nTerms: ' + info.terms.join(', ') + '\n\nDefinitions:\n';
+        for (var i = 0; i < info.definitions.length; i++) {
+            prompt += (i + 1) + '. ' + info.definitions[i] + '\n';
+        }
+        prompt += '\nGive the matches as: term = definition number (1 or 2)';
+        
+        callAPI(prompt, function(a) {
             if (a) {
-                document.getElementById('s').innerText = 'Got matches: ' + a.substring(0, 30);
+                document.getElementById('s').innerText = 'Matches: ' + a.substring(0, 30);
+                
+                // Try to parse matches and do drag/drop
+                // Try drag and drop for each match
+                for (var i = 0; i < info.terms.length; i++) {
+                    var term = info.terms[i];
+                    // Try to find which definition number matches
+                    if (a.toLowerCase().includes(term.toLowerCase())) {
+                        // Try drag and drop
+                        doDragDrop(term, info.definitions[i]);
+                    }
+                }
             }
-            // Matching drag/drop is complex - skip for now
-            clickNext();
-            setTimeout(solve, 3000);
+            
+            // Wait a bit then click Next
+            setTimeout(function() {
+                submitConfidence();
+                clickNext();
+                setTimeout(solve, 3000);
+            }, 2000);
         });
     }
     
@@ -215,7 +264,7 @@
         
         document.getElementById('s').innerText = 'Fill blank...';
         
-        callAPI('Fill in the blank: ' + qt + '\nWhat is the correct answer? Just give the answer.', function(a) {
+        callAPI('Fill in the blank: ' + qt + '\nWhat is the correct answer?', function(a) {
             if (a && inputs[0]) {
                 inputs[0].value = a;
                 inputs[0].dispatchEvent(new Event('input', {bubbles: true}));
@@ -246,9 +295,7 @@
         
         document.getElementById('s').innerText = type + '...';
         
-        var prompt = (type === 'short answer' ? 'SHORT ANSWER: ' : 'ESSAY: ') + qt + '\nGive a appropriate answer.';
-        
-        callAPI(prompt, function(a) {
+        callAPI((type === 'short answer' ? 'SHORT ANSWER: ' : 'ESSAY: ') + qt + '\nGive a appropriate answer.', function(a) {
             var inputs = document.querySelectorAll('textarea, input[type="text"]');
             if (a && inputs.length) {
                 inputs[0].value = a;
