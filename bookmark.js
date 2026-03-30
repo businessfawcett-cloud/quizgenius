@@ -10,7 +10,6 @@
     
     if (!k) { alert('API key required!'); return; }
     
-    // Create panel
     var p = document.createElement('div');
     p.style.cssText = 'position:fixed;top:10px;right:10px;z-index:99999;background:#222;padding:15px;border-radius:10px;color:#fff;font-family:sans-serif;min-width:200px;';
     p.innerHTML = '<b style="color:#0f8">QuizGenius</b><br><span id=s style="font-size:12px">Ready</span><br><button id=st style="background:#0f8;padding:8px 16px;border:none;border-radius:5px;cursor:pointer;margin-top:8px">Start</button><br><span id=t style="font-size:10px;color:#888">Type: -</span>';
@@ -52,27 +51,42 @@
     }
     
     function getMatchingPairs() {
-        // Get all text and try to parse matching
-        var all = document.body.textContent;
-        var pairs = [];
+        // Get ALL text content and parse it
+        var body = document.body.textContent;
         
-        // Look for common patterns
-        var lines = all.split('\n').filter(function(l) { return l.trim().length > 0; });
+        // Extract terms (usually short, on the left)
+        var terms = [];
+        var definitions = [];
         
-        // Extract terms and definitions
-        var terms = [], defs = [];
+        // Look for the specific structure: terms like "Organic Food Production", "Conventional Food Production"
+        // These appear as draggable items
         
-        document.querySelectorAll('[draggable="true"], .draggable, .term').forEach(function(e) {
-            var t = e.textContent.trim();
-            if (t && t.length < 30) terms.push(t);
+        // Get all elements that might be terms
+        document.querySelectorAll('div, span, p').forEach(function(el) {
+            var t = el.textContent.trim();
+            // Terms are typically short (less than 40 chars) and not sentences
+            if (t && t.length > 3 && t.length < 40 && !t.includes('.') && !t.includes('?')) {
+                // Check if it looks like a term (title case)
+                if (t === t.replace(/\b\w/g, function(l){ return l.toUpperCase() })) {
+                    if (terms.indexOf(t) === -1) terms.push(t);
+                }
+            }
         });
         
-        document.querySelectorAll('.definition, .description, .drop-zone').forEach(function(e) {
-            var t = e.textContent.trim();
-            if (t && t.length > 10 && t.length < 200) defs.push(t);
+        // Definitions are longer text
+        document.querySelectorAll('div, p, span').forEach(function(el) {
+            var t = el.textContent.trim();
+            // Definitions are longer sentences
+            if (t && t.length > 20 && t.length < 200 && (t.includes('.') || t.includes(','))) {
+                if (definitions.indexOf(t) === -1) definitions.push(t);
+            }
         });
         
-        return { terms: terms, definitions: defs };
+        // Remove duplicates and clean up
+        terms = terms.slice(0, 6); // Limit terms
+        definitions = definitions.slice(0, 6); // Limit definitions
+        
+        return { terms: terms, definitions: definitions };
     }
     
     function getFillBlankInputs() {
@@ -137,14 +151,11 @@
         
         document.getElementById('s').innerText = 'Sending...';
         
-        var prompt = 'Question: ' + qt + '\nOptions: ' + opts.join(' | ') + '\nWhat is the correct answer? Just say the option text nothing else.';
-        
-        callAPI(prompt, function(a) {
+        callAPI('Question: ' + qt + '\nOptions: ' + opts.join(' | ') + '\nWhat is the correct answer? Just say the option text nothing else.', function(a) {
             if (!a) { document.getElementById('s').innerText = 'API err'; setTimeout(solve, 2000); return; }
             
             document.getElementById('s').innerText = 'Ans: ' + a.substring(0, 20);
             
-            // Find and click the answer
             var found = -1;
             for (var i = 0; i < opts.length; i++) {
                 if (a.toLowerCase().includes(opts[i].toLowerCase())) { found = i; break; }
@@ -156,7 +167,6 @@
                 
                 submitConfidence();
                 clickNext();
-                
                 setTimeout(solve, 4000);
             } else {
                 document.getElementById('s').innerText = 'No match';
@@ -169,8 +179,17 @@
         var qt = getQuestionText();
         var pairs = getMatchingPairs();
         
-        if (pairs.terms.length === 0 || pairs.definitions.length === 0) {
-            document.getElementById('s').innerText = 'No pairs found - skip';
+        document.getElementById('s').innerText = 'Terms: ' + pairs.terms.length + ', Defs: ' + pairs.definitions.length;
+        
+        if (pairs.terms.length < 2 || pairs.definitions.length < 2) {
+            // Try to get more info from page
+            var allText = document.body.textContent;
+            
+            // Parse the matching pairs manually
+            // Look for patterns like "Organic Food Production" = definition
+            
+            // For now, just skip to next question
+            document.getElementById('s').innerText = 'Manual required';
             clickNext();
             setTimeout(solve, 3000);
             return;
@@ -178,11 +197,11 @@
         
         document.getElementById('s').innerText = 'Matching...';
         
-        var prompt = 'MATCHING QUESTION:\nTerms: ' + pairs.terms.join(', ') + '\nDescriptions: ' + pairs.definitions.join('\n') + '\n\nGive matches as: term = description (one per line)';
-        
-        callAPI(prompt, function(a) {
-            document.getElementById('s').innerText = 'Got matches';
-            // Matching is complex - skip for now
+        callAPI('MATCHING QUESTION\n' + qt + '\nTerms (left side): ' + pairs.terms.join(', ') + '\nDescriptions (right side): ' + pairs.definitions.join(' | ') + '\n\nGive the correct matches. Format: Each term = its correct description', function(a) {
+            if (a) {
+                document.getElementById('s').innerText = 'Got matches: ' + a.substring(0, 30);
+            }
+            // Matching drag/drop is complex - skip for now
             clickNext();
             setTimeout(solve, 3000);
         });
@@ -196,9 +215,7 @@
         
         document.getElementById('s').innerText = 'Fill blank...';
         
-        var prompt = 'Fill in the blank: ' + qt + '\nWhat is the correct answer? Just give the answer.';
-        
-        callAPI(prompt, function(a) {
+        callAPI('Fill in the blank: ' + qt + '\nWhat is the correct answer? Just give the answer.', function(a) {
             if (a && inputs[0]) {
                 inputs[0].value = a;
                 inputs[0].dispatchEvent(new Event('input', {bubbles: true}));
@@ -217,9 +234,7 @@
         
         document.getElementById('s').innerText = 'Ordering...';
         
-        var prompt = 'ORDERING QUESTION: ' + qt + '\nItems: ' + opts.join(', ') + '\nWhat is the correct order? List them in order, one per line.';
-        
-        callAPI(prompt, function(a) {
+        callAPI('ORDERING: ' + qt + '\nItems: ' + opts.join(', ') + '\nWhat is the correct order?', function(a) {
             document.getElementById('s').innerText = 'Got order';
             clickNext();
             setTimeout(solve, 3000);
