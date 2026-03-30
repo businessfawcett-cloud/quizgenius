@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QuizGenius Bookmarklet</title>
+    <style>
+        body { font-family: sans-serif; max-width: 500px; margin: 50px auto; padding: 20px; background: #030307; color: #fff; }
+        h1 { color: #00d4aa; }
+        input { padding: 12px; width: 100%; margin: 10px 0; background: #222; border: 1px solid #444; color: #fff; border-radius: 8px; }
+        .btn { background: #00d4aa; color: #000; padding: 14px 28px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; }
+        .result { background: #111; padding: 15px; border-radius: 8px; margin-top: 20px; word-break: break-all; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>QuizGenius Bookmarklet</h1>
+    <p>Works on ANY Chromebook - no extensions needed!</p>
+    
+    <p>1. Enter your API key (get free at console.groq.com/keys):</p>
+    <input type="text" id="apiKey" placeholder="gsk_...">
+    <button class="btn" onclick="makeBookmark()">Create Bookmark</button>
+    
+    <div id="result" style="display:none">
+        <p><strong>2. Create a bookmark:</strong></p>
+        <ul>
+            <li>Right-click bookmarks bar → "Add page"</li>
+            <li>Name: <strong>QuizGenius</strong></li>
+            <li>URL: Copy from below</li>
+        </ul>
+        <p><strong>3. Use:</strong> Click the bookmark when on McGraw Hill quiz!</p>
+        <div class="result" id="bookmarkUrl"></div>
+    </div>
+    
+    <script>
+    function makeBookmark() {
+        var key = document.getElementById('apiKey').value.trim();
+        if (!key) { alert('Enter API key first'); return; }
+        
+        // Super short loader that injects the full script
+        var loader = "javascript:(function(){var s=document.createElement('script');s.src='https://quizgenius-nji8.onrender.com/bookmark.js?key=" + key + "';document.head.appendChild(s)})();";
+        
+        document.getElementById('result').style.display = 'block';
+        document.getElementById('bookmarkUrl').textContent = loader;
+    }
+    </script>
+</body>
+</html>

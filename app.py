@@ -336,6 +336,12 @@ def remote():
     return render_template("remote.html")
 
 
+@app.route("/bookmark")
+def bookmark_page():
+    """Serve the bookmarklet creator page."""
+    return render_template("bookmark.html")
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
