@@ -311,8 +311,14 @@ def quizgenius_js():
         from flask import Response
 
         return Response(content, mimetype="application/javascript")
-    except:
-        return "Script not found", 404
+    except Exception as e:
+        return f"Error: {e}", 500
+
+
+@app.route("/bookmark.js")
+def bookmark_js():
+    """Serve the quiz solver JavaScript (alias)."""
+    return quizgenius_js()
 
 
 @app.route("/loader.js")
