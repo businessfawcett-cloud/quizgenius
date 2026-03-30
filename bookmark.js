@@ -30,6 +30,9 @@
         if (text.toLowerCase().includes('ordering') || text.toLowerCase().includes('rank')) return 'ordering';
         if (text.toLowerCase().includes('short answer')) return 'short_answer';
         if (text.toLowerCase().includes('essay')) return 'essay';
+        if (text.toLowerCase().includes('true or false') || text.toLowerCase().includes('true/false')) return 'true_false';
+        if (text.toLowerCase().includes('true')) return 'true_false';
+        if (text.toLowerCase().includes('false')) return 'true_false';
         return 'unknown';
     }
     
@@ -177,6 +180,8 @@
             solveOrdering();
         } else if (qType === 'short_answer' || qType === 'essay') {
             solveTextAnswer(qType);
+        } else if (qType === 'true_false') {
+            solveTrueFalse();
         } else {
             document.getElementById('s').innerText = 'Skip: ' + qType;
             clickNext();
@@ -400,6 +405,83 @@
         document.getElementById('s').innerText = type;
         clickNext();
         setTimeout(solve, 2000);
+    }
+    
+    function solveTrueFalse() {
+        var qt = getQuestionText();
+        
+        document.getElementById('s').innerText = 'True/False...';
+        
+        // Find True and False buttons
+        var trueBtn = null;
+        var falseBtn = null;
+        
+        var allEls = document.querySelectorAll('button, span, div, label');
+        for (var i = 0; i < allEls.length; i++) {
+            var t = allEls[i].textContent.trim().toLowerCase();
+            if (t === 'true') trueBtn = allEls[i];
+            if (t === 'false') falseBtn = allEls[i];
+        }
+        
+        if (!trueBtn && !falseBtn) {
+            // Try alternative selectors
+            document.querySelectorAll('*').forEach(function(el) {
+                var t = el.textContent.trim().toLowerCase();
+                if (t === 'true') trueBtn = el;
+                if (t === 'false') falseBtn = el;
+            });
+        }
+        
+        if (!trueBtn && !falseBtn) {
+            document.getElementById('s').innerText = 'No T/F buttons';
+            clickNext();
+            setTimeout(solve, 2000);
+            return;
+        }
+        
+        // Ask AI
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', 'https://api.groq.com/openai/v1/chat/completions', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('Authorization', 'Bearer ' + k);
+        
+        xhr.onload = function() {
+            var answer = '';
+            
+            if (xhr.status === 200) {
+                var d = JSON.parse(xhr.responseText);
+                answer = d.choices[0].message.content.trim().toLowerCase();
+                document.getElementById('s').innerText = 'Ans: ' + answer;
+            }
+            
+            // Click True or False
+            if (answer.indexOf('true') > -1 && trueBtn) {
+                trueBtn.click();
+            } else if (answer.indexOf('false') > -1 && falseBtn) {
+                falseBtn.click();
+            } else {
+                // Default: pick True (safer guess)
+                if (trueBtn) trueBtn.click();
+            }
+            
+            submitConfidence();
+            clickNext();
+            setTimeout(solve, 3000);
+        };
+        
+        xhr.ontimeout = function() {
+            // Default to True on timeout
+            if (trueBtn) trueBtn.click();
+            submitConfidence();
+            clickNext();
+            setTimeout(solve, 2000);
+        };
+        
+        xhr.send(JSON.stringify({
+            model: 'llama-3.1-8b-instant',
+            messages: [{ role: 'user', content: 'True or False: ' + qt + ' Just answer True or False.' }],
+            temperature: 0.1
+        }));
     }
     
     console.log('QuizGenius ready - with matching support!');
