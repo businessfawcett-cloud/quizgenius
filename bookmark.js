@@ -192,7 +192,31 @@
     }
     
     function clickNext() {
-        setTimeout(function() { clickElement('Next') || clickElement('Submit'); }, 1500);
+        setTimeout(function() { 
+            // Try multiple variations of Next/Submit
+            var clicked = false;
+            var allEls = document.querySelectorAll('button, span, div, label, li, a');
+            
+            for (var i = 0; i < allEls.length; i++) {
+                var t = allEls[i].textContent.trim().toLowerCase();
+                if (t.includes('next') || t.includes('submit') || t.includes('continue')) {
+                    try {
+                        allEls[i].click();
+                        clicked = true;
+                        break;
+                    } catch(e) {}
+                }
+            }
+            
+            // Also try the specific selectors McGraw Hill might use
+            if (!clicked) {
+                document.querySelectorAll('button').forEach(function(btn) {
+                    if (btn.textContent.trim().length > 0) {
+                        try { btn.click(); } catch(e) {}
+                    }
+                });
+            }
+        }, 1500);
     }
     
     function solve() {
