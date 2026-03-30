@@ -30,9 +30,9 @@
         if (text.toLowerCase().includes('ordering') || text.toLowerCase().includes('rank')) return 'ordering';
         if (text.toLowerCase().includes('short answer')) return 'short_answer';
         if (text.toLowerCase().includes('essay')) return 'essay';
-        if (text.toLowerCase().includes('true or false') || text.toLowerCase().includes('true/false')) return 'true_false';
-        if (text.toLowerCase().includes('true')) return 'true_false';
-        if (text.toLowerCase().includes('false')) return 'true_false';
+        if (text.toLowerCase().includes('true or false')) return 'true_false';
+        if (text.toLowerCase().includes('true false')) return 'true_false';
+        if (text.toLowerCase().includes('true') && text.toLowerCase().includes('false')) return 'true_false';
         return 'unknown';
     }
     
