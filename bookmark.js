@@ -438,28 +438,69 @@
         xhr.setRequestHeader('Authorization', 'Bearer ' + k);
         xhr.timeout = 8000;
         
+        // Better prompt for multi-select
+        var prompt;
+        if (isMultiSelect) {
+            prompt = 'MULTIPLE SELECT - select ALL that apply. Question: ' + qt + ' Options (choose ALL correct ones): ' + opts.join(' | ') + ' List the correct answers separated by commas. Just say the answer words, nothing else.';
+        } else {
+            prompt = 'Question: ' + qt + ' Options: ' + opts.join(' | ') + ' Choose the SINGLE correct answer. Just say the answer word or phrase.';
+        }
+        
         xhr.onload = function() {
             if (xhr.status === 200) {
                 var d = JSON.parse(xhr.responseText);
                 var a = d.choices[0].message.content.trim();
+                console.log('AI Response:', a);
                 document.getElementById('s').innerText = 'Ans: ' + a.substring(0, 30);
                 
                 // For multi-select, we need to find multiple answers
                 var found = [];
+                var lowerOpts = opts.map(function(o) { return o.toLowerCase(); });
+                var lowerA = a.toLowerCase();
+                
+                // Split by comma and check each
+                var answers = a.split(',').map(function(s) { return s.trim().toLowerCase(); });
+                
                 for (var i = 0; i < opts.length; i++) {
-                    if (a.toLowerCase().includes(opts[i].toLowerCase())) { 
-                        found.push(i); 
+                    // Check if any of the answer parts match this option
+                    for (var j = 0; j < answers.length; j++) {
+                        if (answers[j] && lowerOpts[i].includes(answers[j])) {
+                            found.push(i);
+                            break;
+                        }
                     }
                 }
                 
+                console.log('Found options to click:', found);
+                
                 if (found.length > 0) {
-                    var optEls = document.querySelectorAll('span.choiceText.rs_preserve > p, label, .option, li, button, div[role="radio"], div[aria-checked]');
+                    // Try different selectors for options
+                    var optSelectors = [
+                        'span.choiceText.rs_preserve > p',
+                        'label',
+                        '.option',
+                        'li',
+                        'button',
+                        'div[role="checkbox"]',
+                        '[class*="choice"]',
+                        '[class*="option"]'
+                    ];
+                    
+                    var optEls = [];
+                    for (var s = 0; s < optSelectors.length; s++) {
+                        var els = document.querySelectorAll(optSelectors[s]);
+                        if (els.length > 0) {
+                            optEls = Array.from(els);
+                            console.log('Found elements with:', optSelectors[s], 'count:', optEls.length);
+                            break;
+                        }
+                    }
                     
                     // Click all found options
                     found.forEach(function(idx) {
                         if (optEls[idx]) {
+                            console.log('Clicking option', idx, optEls[idx].textContent.substring(0, 20));
                             try { optEls[idx].click(); } catch(e) {
-                                // Try parent click
                                 try { optEls[idx].parentElement.click(); } catch(e2) {}
                             }
                         }
@@ -475,7 +516,7 @@
                                 setTimeout(solve, 3500);
                             }, 1200);
                         }, 600);
-                    }, 800);
+                    }, 1000);
                 } else {
                     document.getElementById('s').innerText = 'No match';
                     skipToMainContent();
