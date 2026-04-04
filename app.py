@@ -231,6 +231,24 @@ def api_sync():
     conn = get_db()
     c = conn.cursor()
 
+    c.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+    user = c.fetchone()
+
+    # Debug: log what we found
+    print(
+        f"API sync called: user_id={user_id}, action={action}, user_found={user is not None}"
+    )
+    if user:
+        print(
+            f"User email: {user['email']}, api_key present: {bool(user['groq_api_key'])}"
+        )
+
+    if not user_id:
+        return jsonify({"error": "user_id required"}), 401
+
+    conn = get_db()
+    c = conn.cursor()
+
     c.execute("SELECT groq_api_key FROM users WHERE id = ?", (user_id,))
     user = c.fetchone()
 
@@ -259,6 +277,25 @@ def api_sync():
     # Default: return API key
     conn.close()
     return jsonify({"api_key": user["groq_api_key"] or ""})
+
+
+@app.route("/debug/db")
+def debug_db():
+    """Debug: check database state."""
+    if "user_id" not in session:
+        return "Not logged in"
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute(
+        "SELECT id, email, groq_api_key FROM users WHERE id = ?", (session["user_id"],)
+    )
+    user = c.fetchone()
+    conn.close()
+
+    if user:
+        return f"User: {user['email']}<br>API Key: {user['groq_api_key'] or 'NOT SET'}"
+    return "User not found"
 
 
 @app.route("/api/key")
