@@ -1,44 +1,111 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>QuizGenius Bookmarklet</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookmarklet - QuizGenius</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: sans-serif; max-width: 500px; margin: 50px auto; padding: 20px; background: #030307; color: #fff; }
-        h1 { color: #00d4aa; }
-        input { padding: 12px; width: 100%; margin: 10px 0; background: #222; border: 1px solid #444; color: #fff; border-radius: 8px; }
-        .btn { background: #00d4aa; color: #000; padding: 14px 28px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; }
-        .result { background: #111; padding: 15px; border-radius: 8px; margin-top: 20px; word-break: break-all; font-size: 12px; }
+        :root { --bg-primary: #030307; --bg-card: #0a0a14; --accent: #00d4aa; --accent-glow: rgba(0, 212, 170, 0.4); --text-primary: #ffffff; --text-secondary: #9ca3af; --border: #1e1e2e; --gradient-primary: linear-gradient(135deg, #00d4aa 0%, #00b894 100%); }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Outfit', sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
+        .bg-gradient { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: -1; overflow: hidden; }
+        .bg-gradient::before { content: ''; position: absolute; width: 600px; height: 600px; background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%); top: -200px; left: -200px; animation: float 20s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(50px, 50px); } }
+        nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(3, 3, 7, 0.85); backdrop-filter: blur(30px); border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        .nav-inner { max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 72px; }
+        .logo { display: flex; align-items: center; gap: 12px; font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; text-decoration: none; color: var(--text-primary); }
+        .logo-icon { width: 40px; height: 40px; background: var(--gradient-primary); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; }
+        .nav-links { display: flex; gap: 32px; list-style: none; }
+        .nav-links a { color: var(--text-secondary); text-decoration: none; font-weight: 500; }
+        .nav-links a:hover { color: var(--text-primary); }
+        .container { max-width: 600px; margin: 0 auto; padding: 120px 24px 40px; }
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 40px; }
+        h1 { font-size: 32px; margin-bottom: 12px; }
+        .subtitle { color: var(--text-secondary); margin-bottom: 32px; }
+        
+        .info-box { background: rgba(0, 212, 170, 0.1); border: 1px solid var(--accent); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+        .info-box p { color: var(--text-secondary); font-size: 14px; margin: 0; }
+        
+        .instructions { margin: 24px 0; }
+        .instructions h3 { font-size: 18px; margin-bottom: 16px; }
+        .instructions ol { padding-left: 20px; color: var(--text-secondary); }
+        .instructions li { margin-bottom: 12px; }
+        
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 16px 32px; border-radius: 14px; font-weight: 600; font-size: 16px; cursor: pointer; border: none; transition: all 0.3s ease; }
+        .btn-primary { background: var(--gradient-primary); color: #000; box-shadow: 0 4px 24px var(--accent-glow); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 40px var(--accent-glow); }
+        
+        .result { background: #111; padding: 20px; border-radius: 12px; margin-top: 24px; word-break: break-all; font-family: monospace; font-size: 12px; display: none; }
+        .result.visible { display: block; }
+        
+        .copy-btn { background: rgba(255,255,255,0.1); color: var(--text-primary); border: 1px solid var(--border); margin-top: 12px; }
+        .copy-btn:hover { border-color: var(--accent); }
     </style>
 </head>
 <body>
-    <h1>QuizGenius Bookmarklet</h1>
-    <p>Works on ANY Chromebook - no extensions needed!</p>
-    
-    <p>1. Enter your API key (get free at console.groq.com/keys):</p>
-    <input type="text" id="apiKey" placeholder="gsk_...">
-    <button class="btn" onclick="makeBookmark()">Create Bookmark</button>
-    
-    <div id="result" style="display:none">
-        <p><strong>2. Create a bookmark:</strong></p>
-        <ul>
-            <li>Right-click bookmarks bar → "Add page"</li>
-            <li>Name: <strong>QuizGenius</strong></li>
-            <li>URL: Copy from below</li>
-        </ul>
-        <p><strong>3. Use:</strong> Click the bookmark when on McGraw Hill quiz!</p>
-        <div class="result" id="bookmarkUrl"></div>
+    <div class="bg-gradient"></div>
+    <nav>
+        <div class="nav-inner">
+            <a href="/" class="logo"><div class="logo-icon">Q</div>QuizGenius</a>
+            <ul class="nav-links">
+                <li><a href="/dashboard">Dashboard</a></li>
+                <li><a href="/settings">Settings</a></li>
+                <li><a href="/logout">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <h1>QuizGenius Bookmarklet</h1>
+            <p class="subtitle">Works on ANY Chromebook - no extensions needed!</p>
+            
+            <div class="info-box">
+                <p>Your API key is pre-loaded from your account. Just create the bookmark and use it!</p>
+            </div>
+            
+            <div class="instructions">
+                <h3>How to use:</h3>
+                <ol>
+                    <li><strong>Create a bookmark:</strong> Click the button below</li>
+                    <li><strong>Add to bookmarks:</strong> Right-click your bookmarks bar → "Add page"</li>
+                    <li><strong>Name it:</strong> QuizGenius</li>
+                    <li><strong>Use:</strong> Click the bookmark when on a McGraw Hill quiz page</li>
+                </ol>
+            </div>
+            
+            <button class="btn btn-primary" onclick="makeBookmark()">Create Bookmark</button>
+            
+            <div class="result" id="result">
+                <p><strong>Bookmark URL (copy this):</strong></p>
+                <div id="bookmarkUrl"></div>
+                <button class="btn copy-btn" onclick="copyBookmark()">Copy to Clipboard</button>
+            </div>
+        </div>
     </div>
     
     <script>
+    var apiKey = "{{ api_key }}";
+    
     function makeBookmark() {
-        var key = document.getElementById('apiKey').value.trim();
-        if (!key) { alert('Enter API key first'); return; }
+        if (!apiKey) {
+            alert('No API key found. Please add one in Settings.');
+            window.location.href = '/settings';
+            return;
+        }
         
-        // Super short loader that injects the full script
-        var loader = "javascript:(function(){var s=document.createElement('script');s.src='https://quizgenius-nji8.onrender.com/bookmark.js?key=" + key + "';document.head.appendChild(s)})();";
+        var loader = "javascript:(function(){var s=document.createElement('script');s.src='https://quizgenius-nji8.onrender.com/bookmark.js?key=" + apiKey + "';document.head.appendChild(s)})();";
         
-        document.getElementById('result').style.display = 'block';
+        document.getElementById('result').classList.add('visible');
         document.getElementById('bookmarkUrl').textContent = loader;
+    }
+    
+    function copyBookmark() {
+        var url = document.getElementById('bookmarkUrl').textContent;
+        navigator.clipboard.writeText(url).then(function() {
+            alert('Copied! Now right-click bookmarks bar → Add page');
+        });
     }
     </script>
 </body>

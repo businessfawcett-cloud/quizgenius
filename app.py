@@ -275,12 +275,18 @@ def api_key():
 @app.route("/download")
 def download():
     """Download page with the local app."""
+    if "user_id" not in session:
+        flash("Please login first", "error")
+        return redirect(url_for("login"))
     return render_template("download.html")
 
 
 @app.route("/userscript")
 def userscript():
     """Serve the userscript file."""
+    if "user_id" not in session:
+        flash("Please login first", "error")
+        return redirect(url_for("login"))
     import os
 
     script_path = os.path.join(os.path.dirname(__file__), "quizgenius.user.js")
@@ -362,7 +368,19 @@ def remote():
 @app.route("/bookmark")
 def bookmark_page():
     """Serve the bookmarklet creator page."""
-    return render_template("bookmark.html")
+    if "user_id" not in session:
+        flash("Please login first", "error")
+        return redirect(url_for("login"))
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT groq_api_key FROM users WHERE id = ?", (session["user_id"],))
+    user = c.fetchone()
+    conn.close()
+
+    return render_template(
+        "bookmark.html", api_key=user["groq_api_key"] if user else ""
+    )
 
 
 if __name__ == "__main__":
