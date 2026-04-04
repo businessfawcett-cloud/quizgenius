@@ -86,10 +86,15 @@
     </div>
     
     <script>
-    var apiKey = "{{ api_key }}";
+    var apiKey = "{{ api_key or '' }}";
+    console.log("API Key from server:", apiKey);
     
     function makeBookmark() {
-        if (!apiKey) {
+        if (!apiKey || apiKey === "None" || apiKey === "") {
+            alert('No API key found. Please add one in Settings.');
+            window.location.href = '/settings';
+            return;
+        }
             alert('No API key found. Please add one in Settings.');
             window.location.href = '/settings';
             return;
