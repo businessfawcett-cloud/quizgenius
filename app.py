@@ -192,6 +192,12 @@ def settings():
     if "user_id" not in session:
         return redirect(url_for("login"))
 
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT groq_api_key FROM users WHERE id = ?", (session["user_id"],))
+    user = c.fetchone()
+    conn.close()
+
     if request.method == "POST":
         api_key = request.form.get("groq_api_key", "").strip()
 
@@ -207,7 +213,9 @@ def settings():
         flash("API key saved!", "success")
         return redirect(url_for("dashboard"))
 
-    return render_template("settings.html")
+    return render_template(
+        "settings.html", api_key=user["groq_api_key"] if user else ""
+    )
 
 
 @app.route("/api/sync", methods=["POST"])
