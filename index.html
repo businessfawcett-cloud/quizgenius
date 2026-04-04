@@ -186,58 +186,135 @@
             border-color: var(--accent);
         }
 
-        .steps {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 24px;
+        .method-section {
             margin: 80px 0;
         }
 
-        .step {
+        .method-section h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 36px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .method-section > .container > p {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 48px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .methods-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .method-card {
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: 20px;
             padding: 32px;
             text-align: left;
             position: relative;
-            overflow: hidden;
+            transition: all 0.3s ease;
         }
 
-        .step::before {
-            content: '';
+        .method-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-4px);
+        }
+
+        .method-card.best {
+            border-color: var(--accent);
+            box-shadow: 0 0 40px var(--accent-glow);
+        }
+
+        .method-card.best::before {
+            content: 'BEST';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: var(--gradient-primary);
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: #000;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
         }
 
-        .step-number {
-            width: 40px;
-            height: 40px;
+        .method-icon {
+            width: 56px;
+            height: 56px;
             background: rgba(0, 212, 170, 0.1);
-            border: 2px solid var(--accent);
-            border-radius: 50%;
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 700;
-            color: var(--accent);
             margin-bottom: 20px;
         }
 
-        .step h3 {
-            font-size: 20px;
+        .method-icon svg {
+            width: 28px;
+            height: 28px;
+            stroke: var(--accent);
+        }
+
+        .method-card h3 {
+            font-size: 22px;
             margin-bottom: 12px;
             font-weight: 600;
         }
 
-        .step p {
+        .method-card p {
             color: var(--text-secondary);
-            font-size: 15px;
-            margin: 0;
+            font-size: 14px;
+            margin-bottom: 24px;
         }
+
+        .method-steps {
+            list-style: none;
+            margin-bottom: 24px;
+        }
+
+        .method-steps li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 0;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .method-steps li::before {
+            content: '';
+            width: 24px;
+            height: 24px;
+            background: rgba(0, 212, 170, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+
+        .method-card:nth-child(1) .method-steps li:nth-child(1)::before { content: '1'; }
+        .method-card:nth-child(1) .method-steps li:nth-child(2)::before { content: '2'; }
+        .method-card:nth-child(1) .method-steps li:nth-child(3)::before { content: '3'; }
+
+        .method-card:nth-child(2) .method-steps li:nth-child(1)::before { content: '1'; }
+        .method-card:nth-child(2) .method-steps li:nth-child(2)::before { content: '2'; }
+        .method-card:nth-child(2) .method-steps li:nth-child(3)::before { content: '3'; }
+
+        .method-card:nth-child(3) .method-steps li:nth-child(1)::before { content: '1'; }
+        .method-card:nth-child(3) .method-steps li:nth-child(2)::before { content: '2'; }
+        .method-card:nth-child(3) .method-steps li:nth-child(3)::before { content: '3'; }
 
         .api-key-section {
             background: var(--bg-card);
@@ -293,7 +370,7 @@
             .hero h1 {
                 font-size: 36px;
             }
-            .steps {
+            .methods-grid {
                 grid-template-columns: 1fr;
             }
             .hero p {
@@ -307,7 +384,7 @@
 
     <nav>
         <div class="nav-inner">
-            <a href="index.html" class="logo">
+            <a href="/" class="logo">
                 <div class="logo-icon">Q</div>
                 QuizGenius
             </a>
@@ -317,34 +394,77 @@
     <section class="hero">
         <div class="container">
             <h1>Solve McGraw Hill Quizzes<br><span class="highlight">Automatically</span></h1>
-            <p>QuizGenius uses AI to read quiz questions and select correct answers for you. Just download, run, and watch it work.</p>
+            <p>AI-powered quiz solver that works on any device. Choose your method below.</p>
+        </div>
+    </section>
+
+    <section class="method-section">
+        <div class="container">
+            <h2>Choose Your Method</h2>
+            <p>How do you want to use QuizGenius?</p>
             
-            <a href="QuizGenius-Setup.exe" class="btn btn-primary">
-                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5 5 5M12 5v12"/></svg>
-                Download QuizGenius
-            </a>
+            <div class="methods-grid">
+                <!-- Method 1: Bookmarklet -->
+                <div class="method-card best">
+                    <div class="method-icon">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                    </div>
+                    <h3>Bookmarklet (Any Device)</h3>
+                    <p>Works on school Chromebooks, restricted browsers, and phones. No installation needed.</p>
+                    
+                    <ul class="method-steps">
+                        <li>Go to the quiz page in your browser</li>
+                        <li>Click the QuizGenius bookmark</li>
+                        <li>Click Start and watch it solve</li>
+                    </ul>
+                    
+                    <a href="/bookmark" class="btn btn-primary" style="width:100%;justify-content:center;">
+                        Create Bookmark
+                    </a>
+                </div>
+
+                <!-- Method 2: Desktop App -->
+                <div class="method-card">
+                    <div class="method-icon">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    </div>
+                    <h3>Desktop App</h3>
+                    <p>Download and run on Windows or Mac. Most powerful option with full automation.</p>
+                    
+                    <ul class="method-steps">
+                        <li>Create free account</li>
+                        <li>Download and run QuizGenius.exe</li>
+                        <li>Enter your API key</li>
+                    </ul>
+                    
+                    <a href="/download" class="btn btn-secondary" style="width:100%;justify-content:center;">
+                        Download for Windows/Mac
+                    </a>
+                </div>
+
+                <!-- Method 3: Userscript -->
+                <div class="method-card">
+                    <div class="method-icon">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                    </div>
+                    <h3>Chromebook (With Permission)</h3>
+                    <p>If your school allows Chrome extensions, install Tampermonkey for seamless use.</p>
+                    
+                    <ul class="method-steps">
+                        <li>Install Tampermonkey extension</li>
+                        <li>Click the link above to install</li>
+                        <li>Enter API key in the panel</li>
+                    </ul>
+                    
+                    <a href="/userscript" class="btn btn-secondary" style="width:100%;justify-content:center;">
+                        Install Userscript
+                    </a>
+                </div>
+            </div>
         </div>
     </section>
 
     <section class="container">
-        <div class="steps">
-            <div class="step">
-                <div class="step-number">1</div>
-                <h3>Download & Extract</h3>
-                <p>Download the ZIP file, extract it to a folder, and run QuizGenius.exe</p>
-            </div>
-            <div class="step">
-                <div class="step-number">2</div>
-                <h3>Enter Your API Key</h3>
-                <p>When prompted, enter your free Groq API key (see below for how to get one)</p>
-            </div>
-            <div class="step">
-                <div class="step-number">3</div>
-                <h3>Watch It Solve</h3>
-                <p>Open your quiz in Chrome, press Enter, and QuizGenius will answer every question automatically</p>
-            </div>
-        </div>
-
         <div class="api-key-section">
             <h2>Get Your Free Groq API Key</h2>
             <p>Groq provides free, unlimited API access. No credit card required.</p>

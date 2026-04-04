@@ -3,6 +3,48 @@
     var params = new URLSearchParams(window.location.search);
     var k = params.get('key') || localStorage.getItem('k');
     
+    // Track quiz stats
+    var quizStats = {
+        questionsSolved: 0,
+        correctFirstTry: 0,
+        startTime: Date.now()
+    };
+    
+    function syncQuizStats() {
+        var timeTaken = Math.round((Date.now() - quizStats.startTime) / 1000);
+        
+        fetch('https://quizgenius-nji8.onrender.com/api/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: localStorage.getItem('user_id'),
+                action: 'record_quiz',
+                questions: quizStats.questionsSolved,
+                correct: quizStats.correctFirstTry,
+                score: Math.round((quizStats.correctFirstTry / quizStats.questionsSolved) * 100),
+                time: timeTaken
+            })
+        }).then(function(r) { return r.json(); })
+        .then(function(d) {
+            document.getElementById('s').innerText = 'Synced to account!';
+        }).catch(function() {});
+    }
+    
+    // Try to get API key from server if user is logged in
+    if (!k) {
+        fetch('https://quizgenius-nji8.onrender.com/api/key')
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                if (d.api_key) {
+                    k = d.api_key;
+                    localStorage.setItem('k', k);
+                    localStorage.setItem('user_id', d.user_id);
+                    document.getElementById('s').innerText = 'Key loaded from account';
+                }
+            })
+            .catch(function() {});
+    }
+    
     if (!k) {
         k = prompt('Enter API Key (get free at console.groq.com/keys):');
         if (k) localStorage.setItem('k', k);
@@ -25,11 +67,20 @@
         if (body.includes('true or false') || body.includes('true/false') || body.includes('true false')) return 'true_false';
         if (body.includes('multiple choice')) return 'multiple_choice';
         if (body.includes('multiple select')) return 'multi_select';
-        if (body.includes('fill') || body.includes('______')) return 'fill_blank';
+        if (body.includes('fill in the blank') || body.includes('fill in blank') || body.includes('______')) return 'fill_blank';
         if (body.includes('ordering') || body.includes('rank the following')) return 'ordering';
         if (body.includes('short answer')) return 'short_answer';
         if (body.includes('essay')) return 'essay';
         if (body.includes('matching question')) return 'matching';
+        
+        // Try to find question type from page elements
+        var typeEl = document.querySelector('[class*="question-type"], [class*="QuestionType"], .question-mode, .q-header');
+        if (typeEl) {
+            var typeText = typeEl.textContent.toLowerCase();
+            if (typeText.includes('fill')) return 'fill_blank';
+            if (typeText.includes('multiple choice')) return 'multiple_choice';
+            if (typeText.includes('true') && typeText.includes('false')) return 'true_false';
+        }
         
         return 'unknown';
     }
@@ -137,9 +188,51 @@
     
     function getFillBlankInputs() {
         var inputs = [];
-        document.querySelectorAll('input[type="text"], textarea').forEach(function(e) {
-            if (e.type !== 'hidden') inputs.push(e);
+        
+        // Get all input-like elements
+        var allInputs = document.querySelectorAll('input, textarea, [contenteditable], [role="textbox"], .rs_textfield, .BlankInput');
+        
+        allInputs.forEach(function(e) {
+            var style = window.getComputedStyle(e);
+            // Check if visible
+            if (style.display !== 'none' && style.visibility !== 'hidden' && 
+                e.type !== 'hidden' && e.offsetParent !== null) {
+                // Skip search boxes and hidden inputs
+                var pt = (e.getAttribute('placeholder') || '').toLowerCase();
+                if (!pt.includes('search') && !pt.includes('find')) {
+                    inputs.push(e);
+                }
+            }
         });
+        
+        // Also look for the specific blank area in the question
+        if (inputs.length === 0) {
+            var prompt = document.querySelector('.prompt, .question-prompt, [class*="prompt"]');
+            if (prompt) {
+                prompt.querySelectorAll('input, textarea, [contenteditable]').forEach(function(e) {
+                    inputs.push(e);
+                });
+            }
+        }
+        
+        // Try finding elements by looking for "nervosa" context (the answer goes before it)
+        if (inputs.length === 0) {
+            var allSpans = document.querySelectorAll('span, p, div');
+            for (var i = 0; i < allSpans.length; i++) {
+                var text = allSpans[i].textContent;
+                if (text.includes('nervosa')) {
+                    // The blank is likely right before "nervosa"
+                    // Look for siblings or children that might be inputs
+                    var parent = allSpans[i].parentElement;
+                    if (parent) {
+                        parent.querySelectorAll('input, textarea, [contenteditable]').forEach(function(e) {
+                            inputs.push(e);
+                        });
+                    }
+                }
+            }
+        }
+        
         return inputs;
     }
     
@@ -156,65 +249,146 @@
     
     function submitConfidence() {
         setTimeout(function() { 
-            // Try multiple selectors for confidence buttons
             var clicked = false;
             
-            // Try to find buttons with high/medium/low
-            var allEls = document.querySelectorAll('button, span, div, label, p');
+            // Track that we solved a question
+            quizStats.questionsSolved++;
+            
+            // Look for confidence buttons - try all elements
+            var allEls = document.querySelectorAll('*');
+            var confidenceEls = [];
+            
             for (var i = 0; i < allEls.length; i++) {
                 var t = allEls[i].textContent.trim().toLowerCase();
-                if (t === 'high' || t === 'medium' || t === 'low') {
+                if (t === 'high' || t === 'medium' || t === 'low' || t === 'very high' || t === 'very low') {
+                    confidenceEls.push(allEls[i]);
+                }
+            }
+            
+            // Click "High" confidence (safest - allows submission)
+            for (var i = 0; i < confidenceEls.length; i++) {
+                var t = confidenceEls[i].textContent.trim().toLowerCase();
+                if (t === 'high' || t === 'very high') {
                     try {
-                        allEls[i].click();
+                        confidenceEls[i].click();
+                        document.getElementById('s').innerText = 'Confidence: High';
                         clicked = true;
                         break;
                     } catch(e) {}
                 }
             }
             
+            // If no High, try Medium
             if (!clicked) {
-                // Try finding by looking for confidence-related text nearby
-                var body = document.body.textContent;
-                if (body.indexOf('Rate your confidence') > -1) {
-                    // Confidence buttons should be nearby
-                    for (var i = 0; i < allEls.length; i++) {
-                        var t = allEls[i].textContent.trim().toLowerCase();
-                        if (t === 'high' || t === 'medium' || t === 'low') {
-                            try {
-                                allEls[i].click();
-                                break;
-                            } catch(e) {}
-                        }
+                for (var i = 0; i < confidenceEls.length; i++) {
+                    var t = confidenceEls[i].textContent.trim().toLowerCase();
+                    if (t === 'medium') {
+                        try {
+                            confidenceEls[i].click();
+                            clicked = true;
+                            break;
+                        } catch(e) {}
                     }
                 }
             }
-        }, 800);
+            
+            // If still no confidence clicked, try anything
+            if (!clicked && confidenceEls.length > 0) {
+                try {
+                    confidenceEls[0].click();
+                    clicked = true;
+                } catch(e) {}
+            }
+        }, 1200);
     }
     
+    function skipToMainContent() {
+        var links = document.querySelectorAll('a');
+        for (var i = 0; i < links.length; i++) {
+            var t = links[i].textContent.trim().toLowerCase();
+            if (t.includes('skip to main content')) {
+                try {
+                    links[i].click();
+                    return true;
+                } catch(e) {}
+            }
+        }
+        return false;
+    }
+
     function clickNext() {
         setTimeout(function() { 
-            // Try multiple variations of Next/Submit
             var clicked = false;
-            var allEls = document.querySelectorAll('button, span, div, label, li, a');
             
-            for (var i = 0; i < allEls.length; i++) {
-                var t = allEls[i].textContent.trim().toLowerCase();
-                if (t.includes('next') || t.includes('submit') || t.includes('continue')) {
-                    try {
-                        allEls[i].click();
+            // First, try "Skip to Main Content" link - LOOK MORE AGGRESSIVELY
+            var links = document.querySelectorAll('a, link, span[role="link"]');
+            for (var i = 0; i < links.length; i++) {
+                var t = links[i].textContent.trim().toLowerCase();
+                if (t.includes('skip to main')) {
+                    try { 
+                        links[i].click(); 
+                        document.getElementById('s').innerText = 'Skipped to main';
                         clicked = true;
-                        break;
                     } catch(e) {}
+                    break;
                 }
             }
             
-            // Also try the specific selectors McGraw Hill might use
+            // Check if this might be the LAST question (no more questions)
+            var bodyText = document.body.textContent.toLowerCase();
+            var isLastQuestion = bodyText.includes('submit') && (bodyText.includes('last question') || bodyText.includes('37 of') || bodyText.includes('final') || bodyText.includes('done'));
+            
+            if (isLastQuestion) {
+                document.getElementById('s').innerText = 'Quiz complete! Syncing...';
+                // Sync stats before finishing
+                syncQuizStats();
+                return;
+            }
+            
+            // Look for Next/Submit/Continue buttons
             if (!clicked) {
-                document.querySelectorAll('button').forEach(function(btn) {
-                    if (btn.textContent.trim().length > 0) {
-                        try { btn.click(); } catch(e) {}
+                var buttons = document.querySelectorAll('button');
+                for (var i = 0; i < buttons.length; i++) {
+                    var t = buttons[i].textContent.trim().toLowerCase();
+                    if (t.includes('next') || t.includes('submit') || t.includes('continue') || t.includes('check')) {
+                        try {
+                            buttons[i].click();
+                            document.getElementById('s').innerText = 'Clicked: ' + t;
+                            clicked = true;
+                            break;
+                        } catch(e) {}
                     }
-                });
+                }
+            }
+            
+            // Try links that might be navigation
+            if (!clicked) {
+                var links = document.querySelectorAll('a, span, div');
+                for (var i = 0; i < links.length; i++) {
+                    var t = links[i].textContent.trim().toLowerCase();
+                    if (t === 'next' || t === 'submit' || t === 'continue' || t === 'check answer') {
+                        try {
+                            links[i].click();
+                            clicked = true;
+                            break;
+                        } catch(e) {}
+                    }
+                }
+            }
+            
+            // Last resort - click first visible button
+            if (!clicked) {
+                var btns = document.querySelectorAll('button');
+                for (var i = 0; i < btns.length; i++) {
+                    var style = window.getComputedStyle(btns[i]);
+                    if (style.display !== 'none' && style.visibility !== 'hidden') {
+                        try {
+                            btns[i].click();
+                            clicked = true;
+                            break;
+                        } catch(e) {}
+                    }
+                }
             }
         }, 1500);
     }
@@ -223,7 +397,8 @@
         if (!running) return;
         
         var qType = getQuestionType();
-        document.getElementById('s').innerText = qType;
+        console.log('QuizGenius: Detected type = ' + qType);
+        document.getElementById('s').innerText = 'Type: ' + qType;
         
         if (qType === 'multiple_choice' || qType === 'multi_select') {
             solveMultipleChoice();
@@ -239,8 +414,9 @@
             solveTrueFalse();
         } else {
             document.getElementById('s').innerText = 'Skip: ' + qType;
-            clickNext();
-            setTimeout(solve, 2000);
+            skipToMainContent();
+            setTimeout(clickNext, 1000);
+            setTimeout(solve, 2500);
         }
     }
     
@@ -248,9 +424,13 @@
         var qt = getQuestionText();
         var opts = getMultipleChoiceOptions();
         
+        // Check if it's actually a multi-select question
+        var body = document.body.textContent.toLowerCase();
+        var isMultiSelect = body.includes('multiple select');
+        
         if (!opts.length) { document.getElementById('s').innerText = 'No opts'; clickNext(); setTimeout(solve, 2000); return; }
         
-        document.getElementById('s').innerText = 'Asking...';
+        document.getElementById('s').innerText = isMultiSelect ? 'Multi-select...' : 'Asking...';
         
         var xhr = new XMLHttpRequest();
         xhr.open('POST', 'https://api.groq.com/openai/v1/chat/completions', true);
@@ -262,40 +442,68 @@
             if (xhr.status === 200) {
                 var d = JSON.parse(xhr.responseText);
                 var a = d.choices[0].message.content.trim();
-                document.getElementById('s').innerText = 'Ans: ' + a.substring(0, 15);
+                document.getElementById('s').innerText = 'Ans: ' + a.substring(0, 30);
                 
-                var found = -1;
+                // For multi-select, we need to find multiple answers
+                var found = [];
                 for (var i = 0; i < opts.length; i++) {
-                    if (a.toLowerCase().includes(opts[i].toLowerCase())) { found = i; break; }
+                    if (a.toLowerCase().includes(opts[i].toLowerCase())) { 
+                        found.push(i); 
+                    }
                 }
                 
-                if (found >= 0) {
-                    var optEls = document.querySelectorAll('span.choiceText.rs_preserve > p, label, .option, li');
-                    if (optEls[found]) optEls[found].click();
-                    submitConfidence();
-                    clickNext();
-                    setTimeout(solve, 4000);
+                if (found.length > 0) {
+                    var optEls = document.querySelectorAll('span.choiceText.rs_preserve > p, label, .option, li, button, div[role="radio"], div[aria-checked]');
+                    
+                    // Click all found options
+                    found.forEach(function(idx) {
+                        if (optEls[idx]) {
+                            try { optEls[idx].click(); } catch(e) {
+                                // Try parent click
+                                try { optEls[idx].parentElement.click(); } catch(e2) {}
+                            }
+                        }
+                    });
+                    
+                    // Rate confidence then next
+                    setTimeout(function() {
+                        submitConfidence();
+                        setTimeout(function() {
+                            skipToMainContent();
+                            setTimeout(function() {
+                                clickNext();
+                                setTimeout(solve, 3500);
+                            }, 1200);
+                        }, 600);
+                    }, 800);
                 } else {
                     document.getElementById('s').innerText = 'No match';
-                    clickNext();
-                    setTimeout(solve, 2000);
+                    skipToMainContent();
+                    setTimeout(clickNext, 1000);
+                    setTimeout(solve, 2500);
                 }
             } else {
                 document.getElementById('s').innerText = 'API error';
-                clickNext();
-                setTimeout(solve, 2000);
+                skipToMainContent();
+                setTimeout(clickNext, 1000);
+                setTimeout(solve, 2500);
             }
         };
         
         xhr.ontimeout = function() {
             document.getElementById('s').innerText = 'Timeout';
-            clickNext();
-            setTimeout(solve, 2000);
+            skipToMainContent();
+            setTimeout(clickNext, 1000);
+            setTimeout(solve, 2500);
         };
+        
+        var prompt = isMultiSelect ? 
+            'MULTIPLE SELECT: Select ALL that apply. ' + qt + ' Options: ' + opts.join(' | ') + ' List ALL correct answers separated by commas.' :
+            'Q: ' + qt + ' Options: ' + opts.join(' | ') + ' Answer?';
         
         xhr.send(JSON.stringify({
             model: 'llama-3.1-8b-instant',
-            messages: [{ role: 'user', content: 'Q: ' + qt + ' Options: ' + opts.join(' | ') + ' Answer?' }],
+            messages: [{ role: 'user', content: prompt }],
             temperature: 0.1
         }));
     }
@@ -394,15 +602,21 @@
             // Wait for matches to register, then submit
             setTimeout(function() {
                 submitConfidence();
-                clickNext();
-                setTimeout(solve, 3000);
-            }, 2000);
+                setTimeout(function() {
+                    skipToMainContent();
+                    setTimeout(function() {
+                        clickNext();
+                        setTimeout(solve, 3000);
+                    }, 1200);
+                }, 600);
+            }, 2500);
         };
         
         xhr.ontimeout = function() {
             document.getElementById('s').innerText = 'Timeout';
-            clickNext();
-            setTimeout(solve, 2000);
+            skipToMainContent();
+            setTimeout(clickNext, 1000);
+            setTimeout(solve, 2500);
         };
         
         var prompt = 'MATCHING QUESTION: ' + qt + '\nTerms: ' + terms.join(', ') + '\nDefinitions: ' + definitions.join(' | ') + '\n\nWhich term goes with which definition? Just say: Organic = definition number, Conventional = definition number';
@@ -416,50 +630,154 @@
     
     function solveFillBlank() {
         var qt = getQuestionText();
-        var inputs = getFillBlankInputs();
+        document.getElementById('s').innerText = 'Fill blank - checking...';
         
-        if (!inputs.length) { document.getElementById('s').innerText = 'No input'; clickNext(); setTimeout(solve, 2000); return; }
+        // Find ALL possible input elements more aggressively
+        var inputs = [];
         
-        document.getElementById('s').innerText = 'Fill...';
+        // Method 1: Standard inputs
+        document.querySelectorAll('input, textarea').forEach(function(e) {
+            if (e.type !== 'hidden') inputs.push(e);
+        });
         
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', 'https://api.groq.com/openai/v1/chat/completions', true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.setRequestHeader('Authorization', 'Bearer ' + k);
+        // Method 2: ContentEditable
+        document.querySelectorAll('[contenteditable]').forEach(function(e) {
+            inputs.push(e);
+        });
         
-        xhr.onload = function() {
-            if (xhr.status === 200) {
-                var d = JSON.parse(xhr.responseText);
-                var a = d.choices[0].message.content.trim();
-                if (inputs[0]) inputs[0].value = a;
+        // Method 3: Elements with textbox role
+        document.querySelectorAll('[role="textbox"], [role="text"]').forEach(function(e) {
+            inputs.push(e);
+        });
+        
+        // Method 4: Look for specific McGraw Hill classes
+        document.querySelectorAll('.rs_textfield, .BlankInput, input.BlankInput, .input-field, [class*="blank"]').forEach(function(e) {
+            inputs.push(e);
+        });
+        
+        // Method 5: Look near "nervosa" text
+        var nervosaEls = document.querySelectorAll('*');
+        for (var i = 0; i < nervosaEls.length; i++) {
+            if (nervosaEls[i].textContent.includes('nervosa')) {
+                var parent = nervosaEls[i].parentElement;
+                while (parent) {
+                    parent.querySelectorAll('input, textarea, [contenteditable]').forEach(function(e) {
+                        inputs.push(e);
+                    });
+                    // Also check if parent itself is editable
+                    if (parent.getAttribute('contenteditable') === 'true') {
+                        inputs.push(parent);
+                    }
+                    parent = parent.parentElement;
+                    if (parent && parent.className && parent.className.toString().includes('question')) break;
+                }
             }
-            submitConfidence();
-            clickNext();
-            setTimeout(solve, 3000);
-        };
+        }
         
-        xhr.ontimeout = function() {
-            clickNext();
-            setTimeout(solve, 2000);
-        };
+        // Dedupe
+        var uniqueInputs = [];
+        var seen = new Set();
+        inputs.forEach(function(e) {
+            if (e && !seen.has(e)) {
+                seen.add(e);
+                uniqueInputs.push(e);
+            }
+        });
+        inputs = uniqueInputs;
         
-        xhr.send(JSON.stringify({
-            model: 'llama-3.1-8b-instant',
-            messages: [{ role: 'user', content: 'Fill blank: ' + qt + ' Answer?' }],
-            temperature: 0.1
-        }));
+        document.getElementById('s').innerText = 'Found: ' + inputs.length + ' inputs';
+        
+        if (!inputs.length) { 
+            document.getElementById('s').innerText = 'No input - skip';
+            
+            // VERY AGGRESSIVE - try clicking anything that might advance
+            setTimeout(function() {
+                // Try Skip link first
+                var all = document.querySelectorAll('*');
+                for (var i = 0; i < all.length; i++) {
+                    var t = all[i].textContent.trim().toLowerCase();
+                    if (t.includes('skip to main')) {
+                        try { all[i].click(); document.getElementById('s').innerText = 'Skip OK'; } catch(e) {}
+                        break;
+                    }
+                }
+                
+                // Try any button
+                setTimeout(function() {
+                    var btns = document.querySelectorAll('button, input[type="button"], input[type="submit"]');
+                    for (var i = 0; i < btns.length; i++) {
+                        try { btns[i].click(); document.getElementById('s').innerText = 'Btn OK'; break; } catch(e) {}
+                    }
+                }, 300);
+            }, 800);
+            
+            setTimeout(solve, 4000);
+            return; 
+        }
+        
+        if (inputs.length > 0) {
+            document.getElementById('s').innerText = 'Got input - asking AI...';
+            
+            // Ask AI for the answer
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', 'https://api.groq.com/openai/v1/chat/completions', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.setRequestHeader('Authorization', 'Bearer ' + k);
+            
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    var d = JSON.parse(xhr.responseText);
+                    var a = d.choices[0].message.content.trim();
+                    a = a.replace(/^["']|["']$/g, '').trim();
+                    
+                    if (inputs[0]) {
+                        inputs[0].value = a;
+                        inputs[0].dispatchEvent(new Event('input', { bubbles: true }));
+                        inputs[0].dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                    document.getElementById('s').innerText = 'Filled: ' + a.substring(0, 15);
+                }
+                
+                setTimeout(function() {
+                    submitConfidence();
+                    setTimeout(function() {
+                        skipToMainContent();
+                        setTimeout(function() {
+                            clickNext();
+                            setTimeout(solve, 3000);
+                        }, 1000);
+                    }, 500);
+                }, 1000);
+            };
+            
+            xhr.ontimeout = function() {
+                skipToMainContent();
+                clickNext();
+                setTimeout(solve, 2000);
+            };
+            
+            xhr.timeout = 8000;
+            
+            xhr.send(JSON.stringify({
+                model: 'llama-3.1-8b-instant',
+                messages: [{ role: 'user', content: 'Fill in the blank: ' + qt + ' Just give me the answer word or short phrase.' }],
+                temperature: 0.1
+            }));
+        }
     }
     
     function solveOrdering() {
-        document.getElementById('s').innerText = 'Ordering';
-        clickNext();
-        setTimeout(solve, 2000);
+        document.getElementById('s').innerText = 'Ordering - skipping';
+        skipToMainContent();
+        setTimeout(clickNext, 1000);
+        setTimeout(solve, 2500);
     }
     
     function solveTextAnswer(type) {
-        document.getElementById('s').innerText = type;
-        clickNext();
-        setTimeout(solve, 2000);
+        document.getElementById('s').innerText = type + ' - skipping';
+        skipToMainContent();
+        setTimeout(clickNext, 1000);
+        setTimeout(solve, 2500);
     }
     
     function solveTrueFalse() {
@@ -511,28 +829,36 @@
             
             // Click True or False
             if (answer.indexOf('true') > -1 && trueBtn) {
-                trueBtn.click();
+                try { trueBtn.click(); } catch(e) { try { trueBtn.parentElement.click(); } catch(e2) {} }
             } else if (answer.indexOf('false') > -1 && falseBtn) {
-                falseBtn.click();
+                try { falseBtn.click(); } catch(e) { try { falseBtn.parentElement.click(); } catch(e2) {} }
             } else {
-                // Default: pick True (safer guess)
-                if (trueBtn) trueBtn.click();
+                if (trueBtn) { try { trueBtn.click(); } catch(e) { try { trueBtn.parentElement.click(); } catch(e2) {} } }
             }
             
-            // Wait and click confidence
+            // Wait and click confidence then next
             setTimeout(function() {
                 submitConfidence();
-                clickNext();
-                setTimeout(solve, 3000);
+                setTimeout(function() {
+                    skipToMainContent();
+                    setTimeout(function() {
+                        clickNext();
+                        setTimeout(solve, 3000);
+                    }, 1200);
+                }, 600);
             }, 1000);
         };
         
         xhr.ontimeout = function() {
-            // Default to True on timeout
-            if (trueBtn) trueBtn.click();
-            submitConfidence();
-            clickNext();
-            setTimeout(solve, 2000);
+            if (trueBtn) { try { trueBtn.click(); } catch(e) {} }
+            setTimeout(function() {
+                submitConfidence();
+                setTimeout(function() {
+                    skipToMainContent();
+                    setTimeout(clickNext, 1000);
+                    setTimeout(solve, 2500);
+                }, 600);
+            }, 800);
         };
         
         xhr.send(JSON.stringify({

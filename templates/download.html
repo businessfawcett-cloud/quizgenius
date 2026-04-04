@@ -19,25 +19,26 @@
         .nav-links { display: flex; gap: 32px; list-style: none; }
         .nav-links a { color: var(--text-secondary); text-decoration: none; font-weight: 500; }
         .nav-links a:hover { color: var(--text-primary); }
-        .container { max-width: 900px; margin: 0 auto; padding: 120px 24px 40px; }
+        .container { max-width: 800px; margin: 0 auto; padding: 120px 24px 40px; }
         h1 { font-size: 36px; margin-bottom: 8px; text-align: center; }
         .subtitle { color: var(--text-secondary); text-align: center; margin-bottom: 40px; font-size: 18px; }
         
-        .option-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; margin-bottom: 24px; }
-        .option-card h2 { font-size: 24px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
-        .option-card .badge { font-size: 12px; padding: 4px 12px; border-radius: 20px; background: rgba(0,212,170,0.2); color: var(--accent); }
-        .option-card p { color: var(--text-secondary); margin-bottom: 20px; }
-        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; border-radius: 12px; font-weight: 600; font-size: 15px; text-decoration: none; cursor: pointer; border: none; }
-        .btn-primary { background: var(--gradient-primary); color: #000; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px var(--accent-glow); }
-        .btn-secondary { background: rgba(255,255,255,0.05); color: var(--text-primary); border: 1px solid var(--border); }
+        .download-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 40px; text-align: center; }
+        .download-card h2 { font-size: 28px; margin-bottom: 16px; }
+        .download-card p { color: var(--text-secondary); margin-bottom: 24px; font-size: 16px; }
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 16px 32px; border-radius: 14px; font-weight: 600; font-size: 16px; text-decoration: none; cursor: pointer; border: none; transition: all 0.3s ease; }
+        .btn-primary { background: var(--gradient-primary); color: #000; box-shadow: 0 4px 24px var(--accent-glow); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 40px var(--accent-glow); }
         
-        .steps { margin-top: 20px; }
-        .step { display: flex; gap: 12px; margin-bottom: 12px; font-size: 14px; color: var(--text-secondary); }
-        .step-num { color: var(--accent); font-weight: 600; }
+        .requirements { margin-top: 40px; text-align: left; }
+        .requirements h3 { font-size: 18px; margin-bottom: 16px; }
+        .requirements ul { list-style: none; }
+        .requirements li { padding: 8px 0; color: var(--text-secondary); border-bottom: 1px solid var(--border); }
+        .requirements li::before { content: '> '; color: var(--accent); }
         
-        .warning { background: rgba(255, 200, 0, 0.1); border: 1px solid rgba(255, 200, 0, 0.3); padding: 16px; border-radius: 12px; margin-top: 20px; }
-        .warning-title { color: #ffc800; font-weight: 600; margin-bottom: 8px; }
+        .note { background: rgba(0,212,170,0.1); border: 1px solid var(--accent); border-radius: 12px; padding: 20px; margin-top: 30px; text-align: left; }
+        .note-title { color: var(--accent); font-weight: 600; margin-bottom: 8px; }
+        .note p { color: var(--text-secondary); font-size: 14px; margin: 0; }
     </style>
 </head>
 <body>
@@ -59,53 +60,31 @@
     </nav>
 
     <div class="container">
-        <h1>Choose Your Method</h1>
-        <p class="subtitle">How do you want to use QuizGenius?</p>
+        <h1>Download QuizGenius</h1>
+        <p class="subtitle">Desktop app for Windows and Mac</p>
         
-        <!-- Option 1: Personal Computer -->
-        <div class="option-card">
-            <h2>Desktop App <span class="badge">Best</span></h2>
-            <p>Download and run on your Windows or Mac computer. Most powerful option.</p>
-            <a href="#" class="btn btn-primary">Download for Windows/Mac</a>
-            <div class="steps">
-                <div class="step"><span class="step-num">1.</span> Create free account</div>
-                <div class="step"><span class="step-num">2.</span> Download and run QuizGenius.exe</div>
-                <div class="step"><span class="step-num">3.</span> Enter your API key</div>
+        <div class="download-card">
+            <h2>QuizGenius Desktop App</h2>
+            <p>The most powerful way to solve McGraw Hill quizzes automatically.</p>
+            
+            <a href="https://quizgenius-nji8.onrender.com/QuizGenius-Setup.exe" class="btn btn-primary" download>
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5 5 5M12 5v12"/></svg>
+                Download .exe
+            </a>
+            
+            <div class="requirements">
+                <h3>System Requirements</h3>
+                <ul>
+                    <li>Windows 10/11 or macOS</li>
+                    <li>Internet connection</li>
+                    <li>Groq API key (free)</li>
+                </ul>
             </div>
-        </div>
-        
-        <!-- Option 2: Chromebook with extensions -->
-        <div class="option-card">
-            <h2>Chromebook (with permission)</h2>
-            <p>If your school allows Chrome extensions, this works great.</p>
-            <a href="/userscript" class="btn btn-secondary" target="_blank">Install Userscript</a>
-            <div class="steps">
-                <div class="step"><span class="step-num">1.</span> Install Tampermonkey extension</div>
-                <div class="step"><span class="step-num">2.</span> Click the link above to install</div>
-                <div class="step"><span class="step-num">3.</span> Enter API key in the panel</div>
+            
+            <div class="note">
+                <div class="note-title">Need a different option?</div>
+                <p>If you can't download the app, try the <a href="/bookmark" style="color: var(--accent);">Bookmarklet</a> - works on any browser without installation.</p>
             </div>
-        </div>
-        
-        <!-- Option 3: Phone + Chromebook -->
-        <div class="option-card">
-            <h2>Phone + Chromebook <span class="badge">For School Chromebooks</span></h2>
-            <p>Use your phone to solve the quiz, watch on your Chromebook.</p>
-            <a href="/remote" class="btn btn-secondary">How It Works</a>
-            <div class="steps">
-                <div class="step"><span class="step-num">1.</span> Go to quiz on your PHONE</div>
-                <div class class="step"><span class="step-num">2.</span> Use QuizGenius on your phone</div>
-                <div class="step"><span class="step-num">3.</span> Or use remote session to control from phone</div>
-            </div>
-        </div>
-        
-        <div class="warning">
-            <div class="warning-title">School Chromebook Restrictions</div>
-            <p>If your school blocks extensions and console access, your options are:</p>
-            <ul style="margin-top: 10px; padding-left: 20px; color: var(--text-secondary);">
-                <li>Use your personal phone to do the quiz</li>
-                <li>Ask your school admin to allow the Tampermonkey extension</li>
-                <li>Do the quiz at home on your personal computer</li>
-            </ul>
         </div>
     </div>
 </body>

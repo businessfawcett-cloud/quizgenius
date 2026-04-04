@@ -64,8 +64,6 @@ def get_db():
 
 @app.route("/")
 def index():
-    if "user_id" in session:
-        return redirect(url_for("dashboard"))
     return render_template("index.html")
 
 
@@ -253,6 +251,25 @@ def api_sync():
     # Default: return API key
     conn.close()
     return jsonify({"api_key": user["groq_api_key"] or ""})
+
+
+@app.route("/api/key")
+def api_key():
+    """Return API key for logged-in user (for bookmarklet)."""
+    if "user_id" not in session:
+        return jsonify({"api_key": "", "user_id": ""})
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT groq_api_key FROM users WHERE id = ?", (session["user_id"],))
+    user = c.fetchone()
+    conn.close()
+
+    if user:
+        return jsonify(
+            {"api_key": user["groq_api_key"] or "", "user_id": session["user_id"]}
+        )
+    return jsonify({"api_key": "", "user_id": ""})
 
 
 @app.route("/download")

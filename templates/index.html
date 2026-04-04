@@ -5,186 +5,489 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QuizGenius - AI Quiz Solver</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-primary: #030307;
+            --bg-secondary: #080810;
+            --bg-tertiary: #0d0d18;
             --bg-card: #0a0a14;
             --accent: #00d4aa;
             --accent-glow: rgba(0, 212, 170, 0.4);
+            --accent-secondary: #7c3aed;
             --text-primary: #ffffff;
             --text-secondary: #9ca3af;
             --border: #1e1e2e;
             --gradient-primary: linear-gradient(135deg, #00d4aa 0%, #00b894 100%);
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Outfit', sans-serif;
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
+            line-height: 1.6;
             min-height: 100vh;
         }
+
         .bg-gradient {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            z-index: -1; overflow: hidden;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: -1;
+            overflow: hidden;
         }
+
         .bg-gradient::before {
-            content: ''; position: absolute;
-            width: 600px; height: 600px;
+            content: '';
+            position: absolute;
+            width: 600px;
+            height: 600px;
             background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
-            top: -200px; left: -200px;
+            top: -200px;
+            left: -200px;
             animation: float 20s ease-in-out infinite;
         }
+
         .bg-gradient::after {
-            content: ''; position: absolute;
-            width: 500px; height: 500px;
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
             background: radial-gradient(circle, rgba(124, 58, 237, 0.3) 0%, transparent 70%);
-            bottom: -100px; right: -100px;
+            bottom: -100px;
+            right: -100px;
             animation: float 25s ease-in-out infinite reverse;
         }
+
         @keyframes float {
             0%, 100% { transform: translate(0, 0) scale(1); }
             33% { transform: translate(100px, 50px) scale(1.1); }
             66% { transform: translate(-50px, 100px) scale(0.9); }
         }
+
         nav {
-            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-            background: rgba(3, 3, 7, 0.85); backdrop-filter: blur(30px);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: rgba(3, 3, 7, 0.85);
+            backdrop-filter: blur(30px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
+
         .nav-inner {
-            max-width: 1200px; margin: 0 auto; padding: 0 24px;
-            display: flex; align-items: center; justify-content: space-between; height: 72px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 72px;
         }
+
         .logo {
-            display: flex; align-items: center; gap: 12px;
-            font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700;
-            color: var(--text-primary); text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
         }
+
         .logo-icon {
-            width: 40px; height: 40px; background: var(--gradient-primary);
-            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: var(--gradient-primary);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-weight: 800;
         }
-        .nav-links { display: flex; gap: 32px; list-style: none; }
-        .nav-links a {
-            color: var(--text-secondary); text-decoration: none; font-weight: 500;
-            transition: color 0.2s;
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
         }
-        .nav-links a:hover { color: var(--text-primary); }
-        .btn {
-            display: inline-flex; align-items: center; gap: 8px;
-            padding: 12px 24px; border-radius: 12px; font-weight: 600; font-size: 15px;
-            text-decoration: none; cursor: pointer; border: none;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+        .hero {
+            padding: 160px 0 80px;
+            text-align: center;
         }
-        .btn-primary {
-            background: var(--gradient-primary); color: #000;
-            box-shadow: 0 4px 24px var(--accent-glow);
-        }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 40px var(--accent-glow); }
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.05); color: var(--text-primary);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .btn-secondary:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--accent); }
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
-        .hero { padding: 160px 0 80px; text-align: center; }
+
         .hero h1 {
-            font-family: 'Space Grotesk', sans-serif; font-size: 56px; font-weight: 800;
-            line-height: 1.1; margin-bottom: 20px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 56px;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 20px;
         }
+
         .hero h1 .highlight {
             background: linear-gradient(135deg, #00d4aa 0%, #7c3aed 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
-        .hero p { font-size: 20px; color: var(--text-secondary); max-width: 600px; margin: 0 auto 40px; }
-        .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin: 80px 0; }
-        .step {
-            background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: 20px; padding: 32px; text-align: left;
-            position: relative;
+
+        .hero p {
+            font-size: 20px;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 40px;
         }
-        .step::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 32px;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 16px;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-primary {
             background: var(--gradient-primary);
+            color: #000;
+            box-shadow: 0 4px 24px var(--accent-glow);
         }
-        .step-number {
-            width: 40px; height: 40px; background: rgba(0, 212, 170, 0.1);
-            border: 2px solid var(--accent); border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: 700; color: var(--accent); margin-bottom: 20px;
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 40px var(--accent-glow);
         }
-        .step h3 { font-size: 20px; margin-bottom: 12px; font-weight: 600; }
-        .step p { color: var(--text-secondary); font-size: 15px; }
-        .api-section {
-            background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: 20px; padding: 40px; margin: 40px 0; text-align: center;
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .api-section h2 { font-size: 28px; margin-bottom: 16px; }
-        .api-section p { color: var(--text-secondary); margin-bottom: 24px; }
-        .api-steps { display: flex; justify-content: center; gap: 40px; margin-top: 32px; flex-wrap: wrap; }
-        .api-step { display: flex; align-items: center; gap: 12px; color: var(--text-secondary); }
-        .api-step svg { color: var(--accent); }
-        footer { text-align: center; padding: 40px 0; color: var(--text-secondary); font-size: 14px; border-top: 1px solid var(--border); margin-top: 80px; }
-        .hero-buttons { display: flex; gap: 16px; justify-content: center; }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent);
+        }
+
+        .method-section {
+            margin: 80px 0;
+        }
+
+        .method-section h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 36px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .method-section > .container > p {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 48px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .methods-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .method-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 32px;
+            text-align: left;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .method-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-4px);
+        }
+
+        .method-card.best {
+            border-color: var(--accent);
+            box-shadow: 0 0 40px var(--accent-glow);
+        }
+
+        .method-card.best::before {
+            content: 'BEST';
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: #000;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .method-icon {
+            width: 56px;
+            height: 56px;
+            background: rgba(0, 212, 170, 0.1);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .method-icon svg {
+            width: 28px;
+            height: 28px;
+            stroke: var(--accent);
+        }
+
+        .method-card h3 {
+            font-size: 22px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .method-card p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        .method-steps {
+            list-style: none;
+            margin-bottom: 24px;
+        }
+
+        .method-steps li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 0;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .method-steps li::before {
+            content: '';
+            width: 24px;
+            height: 24px;
+            background: rgba(0, 212, 170, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+
+        .method-card:nth-child(1) .method-steps li:nth-child(1)::before { content: '1'; }
+        .method-card:nth-child(1) .method-steps li:nth-child(2)::before { content: '2'; }
+        .method-card:nth-child(1) .method-steps li:nth-child(3)::before { content: '3'; }
+
+        .method-card:nth-child(2) .method-steps li:nth-child(1)::before { content: '1'; }
+        .method-card:nth-child(2) .method-steps li:nth-child(2)::before { content: '2'; }
+        .method-card:nth-child(2) .method-steps li:nth-child(3)::before { content: '3'; }
+
+        .method-card:nth-child(3) .method-steps li:nth-child(1)::before { content: '1'; }
+        .method-card:nth-child(3) .method-steps li:nth-child(2)::before { content: '2'; }
+        .method-card:nth-child(3) .method-steps li:nth-child(3)::before { content: '3'; }
+
+        .api-key-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 40px 0;
+            text-align: center;
+        }
+
+        .api-key-section h2 {
+            font-size: 28px;
+            margin-bottom: 16px;
+        }
+
+        .api-key-section p {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .api-key-steps {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 32px;
+            flex-wrap: wrap;
+        }
+
+        .api-step {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-secondary);
+        }
+
+        .api-step svg {
+            color: var(--accent);
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 0;
+            color: var(--text-secondary);
+            font-size: 14px;
+            border-top: 1px solid var(--border);
+            margin-top: 80px;
+        }
+
         @media (max-width: 768px) {
-            .hero h1 { font-size: 36px; }
-            .steps { grid-template-columns: 1fr; }
-            .nav-links { display: none; }
+            .hero h1 {
+                font-size: 36px;
+            }
+            .methods-grid {
+                grid-template-columns: 1fr;
+            }
+            .hero p {
+                font-size: 16px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="bg-gradient"></div>
+
     <nav>
         <div class="nav-inner">
             <a href="/" class="logo">
                 <div class="logo-icon">Q</div>
                 QuizGenius
             </a>
-            <ul class="nav-links">
-                <li><a href="/download">Download</a></li>
-                <li><a href="/login">Login</a></li>
-                <li><a href="/register" class="btn btn-primary" style="padding: 8px 16px;">Get Started</a></li>
-            </ul>
         </div>
     </nav>
 
     <section class="hero">
         <div class="container">
             <h1>Solve McGraw Hill Quizzes<br><span class="highlight">Automatically</span></h1>
-            <p>AI-powered quiz assistant that solves your McGraw Hill questions instantly.</p>
-            <div class="hero-buttons">
-                <a href="/register" class="btn btn-primary">Get Started Free</a>
-                <a href="/download" class="btn btn-secondary">Download App</a>
+            <p>AI-powered quiz solver that works on any device. Choose your method below.</p>
+        </div>
+    </section>
+
+    <section class="method-section">
+        <div class="container">
+            <h2>Choose Your Method</h2>
+            <p>How do you want to use QuizGenius?</p>
+            
+            <div class="methods-grid">
+                <!-- Method 1: Bookmarklet -->
+                <div class="method-card best">
+                    <div class="method-icon">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                    </div>
+                    <h3>Bookmarklet (Any Device)</h3>
+                    <p>Works on school Chromebooks, restricted browsers, and phones. No installation needed.</p>
+                    
+                    <ul class="method-steps">
+                        <li>Go to the quiz page in your browser</li>
+                        <li>Click the QuizGenius bookmark</li>
+                        <li>Click Start and watch it solve</li>
+                    </ul>
+                    
+                    <a href="/bookmark" class="btn btn-primary" style="width:100%;justify-content:center;">
+                        Create Bookmark
+                    </a>
+                </div>
+
+                <!-- Method 2: Desktop App -->
+                <div class="method-card">
+                    <div class="method-icon">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    </div>
+                    <h3>Desktop App</h3>
+                    <p>Download and run on Windows or Mac. Most powerful option with full automation.</p>
+                    
+                    <ul class="method-steps">
+                        <li>Create free account</li>
+                        <li>Download and run QuizGenius.exe</li>
+                        <li>Enter your API key</li>
+                    </ul>
+                    
+                    <a href="/download" class="btn btn-secondary" style="width:100%;justify-content:center;">
+                        Download for Windows/Mac
+                    </a>
+                </div>
+
+                <!-- Method 3: Userscript -->
+                <div class="method-card">
+                    <div class="method-icon">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                    </div>
+                    <h3>Chromebook (With Permission)</h3>
+                    <p>If your school allows Chrome extensions, install Tampermonkey for seamless use.</p>
+                    
+                    <ul class="method-steps">
+                        <li>Install Tampermonkey extension</li>
+                        <li>Click the link above to install</li>
+                        <li>Enter API key in the panel</li>
+                    </ul>
+                    
+                    <a href="/userscript" class="btn btn-secondary" style="width:100%;justify-content:center;">
+                        Install Userscript
+                    </a>
+                </div>
             </div>
         </div>
     </section>
 
     <section class="container">
-        <div class="steps">
-            <div class="step">
-                <div class="step-number">1</div>
-                <h3>Create Account</h3>
-                <p>Sign up for free and save your API key securely</p>
-            </div>
-            <div class="step">
-                <div class="step-number">2</div>
-                <h3>Download App</h3>
-                <p>Get the desktop app and connect to your account</p>
-            </div>
-            <div class="step">
-                <div class="step-number">3</div>
-                <h3>Watch It Solve</h3>
-                <p>Open your quiz, run the app, and let AI do the work</p>
-            </div>
-        </div>
+        <div class="api-key-section">
+            <h2>Get Your Free Groq API Key</h2>
+            <p>Groq provides free, unlimited API access. No credit card required.</p>
+            
+            <a href="https://console.groq.com/keys" target="_blank" class="btn btn-secondary">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
+                Get Free API Key
+            </a>
 
-        <div class="api-section">
-            <h2>How It Works</h2>
-            <p>QuizGenius connects to your Chrome browser and uses AI to answer quiz questions automatically.</p>
-            <a href="/register" class="btn btn-primary">Create Free Account</a>
+            <div class="api-key-steps">
+                <div class="api-step">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                    Visit Groq Console
+                </div>
+                <div class="api-step">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                    Create API Key
+                </div>
+                <div class="api-step">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                    Paste into QuizGenius
+                </div>
+            </div>
         </div>
     </section>
 
