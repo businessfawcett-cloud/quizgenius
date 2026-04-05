@@ -4,7 +4,6 @@ Run: python app.py
 """
 
 import os
-import sqlite3
 from flask import (
     Flask,
     render_template,
@@ -21,45 +20,101 @@ import uuid
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", str(uuid.uuid4()))
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "quizgenius.db")
+DATABASE_URL = os.environ.get("DATABASE_URL")
+USE_POSTGRES = DATABASE_URL and DATABASE_URL.startswith("postgresql://")
 
+if USE_POSTGRES:
+    import psycopg2
+    from psycopg2.extras import RealDictCursor
 
-def init_db():
-    """Initialize database with users table."""
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            groq_api_key TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS quiz_history (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            questions_solved INTEGER DEFAULT 0,
-            correct_first_try INTEGER DEFAULT 0,
-            score INTEGER DEFAULT 0,
-            time_taken INTEGER DEFAULT 0,
-            completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users (id)
-        )
-    """)
-    conn.commit()
-    conn.close()
+    def get_db():
+        conn = psycopg2.connect(DATABASE_URL)
+        return conn
+
+    def init_db():
+        conn = get_db()
+        c = conn.cursor()
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                email TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                groq_api_key TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS quiz_history (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users (id),
+                questions_solved INTEGER DEFAULT 0,
+                correct_first_try INTEGER DEFAULT 0,
+                score INTEGER DEFAULT 0,
+                time_taken INTEGER DEFAULT 0,
+                completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn.commit()
+        conn.close()
+
+    def dict_row(cursor):
+        return RealDictCursor
+else:
+    import sqlite3
+
+    DB_PATH = os.path.join(os.path.dirname(__file__), "quizgenius.db")
+
+    def get_db():
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        return conn
+
+    def init_db():
+        conn = get_db()
+        c = conn.cursor()
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                groq_api_key TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS quiz_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                questions_solved INTEGER DEFAULT 0,
+                correct_first_try INTEGER DEFAULT 0,
+                score INTEGER DEFAULT 0,
+                time_taken INTEGER DEFAULT 0,
+                completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users (id)
+            )
+        """)
+        conn.commit()
+        conn.close()
+
+    def dict_row(cursor):
+        return None
 
 
 init_db()
 
 
-def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+def q(sql):
+    """Convert SQL query to use correct parameter placeholders."""
+    if USE_POSTGRES:
+        return sql.replace("?", "%s")
+    return sql
+
+
+def get_user_id_from_cursor(c):
+    """Get last inserted ID from cursor."""
+    if USE_POSTGRES:
+        return c.fetchone()[0]
+    return c.lastrowid
 
 
 @app.route("/")
@@ -89,18 +144,22 @@ def register():
         try:
             conn = get_db()
             c = conn.cursor()
-            c.execute("SELECT id FROM users WHERE email = ?", (email,))
+            c.execute(q("SELECT id FROM users WHERE email = ?"), (email,))
             if c.fetchone():
                 flash("Email already registered", "error")
                 conn.close()
                 return render_template("register.html")
 
             c.execute(
-                "INSERT INTO users (email, password_hash) VALUES (?, ?)",
+                q(
+                    "INSERT INTO users (email, password_hash) VALUES (?, ?) RETURNING id"
+                    if USE_POSTGRES
+                    else "INSERT INTO users (email, password_hash) VALUES (?, ?)"
+                ),
                 (email, generate_password_hash(password)),
             )
             conn.commit()
-            user_id = c.lastrowid
+            user_id = get_user_id_from_cursor(c)
             conn.close()
 
             session["user_id"] = user_id
@@ -122,7 +181,7 @@ def login():
         conn = get_db()
         c = conn.cursor()
         c.execute(
-            "SELECT id, email, password_hash FROM users WHERE email = ?", (email,)
+            q("SELECT id, email, password_hash FROM users WHERE email = ?"), (email,)
         )
         user = c.fetchone()
         conn.close()
@@ -152,17 +211,27 @@ def dashboard():
     conn = get_db()
     c = conn.cursor()
 
-    c.execute("SELECT groq_api_key FROM users WHERE id = ?", (session["user_id"],))
+    c.execute(q("SELECT groq_api_key FROM users WHERE id = ?"), (session["user_id"],))
     user = c.fetchone()
 
     c.execute(
-        """
+        q("""
         SELECT SUM(questions_solved) as total_questions,
                SUM(correct_first_try) as total_correct,
                AVG(score) as avg_score,
                COUNT(*) as total_quizzes
         FROM quiz_history WHERE user_id = ?
-    """,
+    """),
+        (session["user_id"],),
+    )
+    stats = c.fetchone()
+
+    c.execute(
+        q("""
+        SELECT * FROM quiz_history 
+        WHERE user_id = ? 
+        ORDER BY completed_at DESC LIMIT 10
+    """),
         (session["user_id"],),
     )
     stats = c.fetchone()
@@ -194,7 +263,7 @@ def settings():
 
     conn = get_db()
     c = conn.cursor()
-    c.execute("SELECT groq_api_key FROM users WHERE id = ?", (session["user_id"],))
+    c.execute(q("SELECT groq_api_key FROM users WHERE id = ?"), (session["user_id"],))
     user = c.fetchone()
     conn.close()
 
@@ -204,7 +273,7 @@ def settings():
         conn = get_db()
         c = conn.cursor()
         c.execute(
-            "UPDATE users SET groq_api_key = ? WHERE id = ?",
+            q("UPDATE users SET groq_api_key = ? WHERE id = ?"),
             (api_key, session["user_id"]),
         )
         conn.commit()
@@ -231,7 +300,7 @@ def api_sync():
     conn = get_db()
     c = conn.cursor()
 
-    c.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+    c.execute(q("SELECT * FROM users WHERE id = ?"), (user_id,))
     user = c.fetchone()
 
     # Debug: log what we found
@@ -243,25 +312,16 @@ def api_sync():
             f"User email: {user['email']}, api_key present: {bool(user['groq_api_key'])}"
         )
 
-    if not user_id:
-        return jsonify({"error": "user_id required"}), 401
-
-    conn = get_db()
-    c = conn.cursor()
-
-    c.execute("SELECT groq_api_key FROM users WHERE id = ?", (user_id,))
-    user = c.fetchone()
-
     if not user:
         conn.close()
         return jsonify({"error": "User not found"}), 404
 
     if action == "record_quiz":
         c.execute(
-            """
+            q("""
             INSERT INTO quiz_history (user_id, questions_solved, correct_first_try, score, time_taken)
             VALUES (?, ?, ?, ?, ?)
-        """,
+        """),
             (
                 user_id,
                 data.get("questions", 0),
@@ -288,7 +348,8 @@ def debug_db():
     conn = get_db()
     c = conn.cursor()
     c.execute(
-        "SELECT id, email, groq_api_key FROM users WHERE id = ?", (session["user_id"],)
+        q("SELECT id, email, groq_api_key FROM users WHERE id = ?"),
+        (session["user_id"],),
     )
     user = c.fetchone()
     conn.close()
@@ -306,7 +367,7 @@ def api_key():
 
     conn = get_db()
     c = conn.cursor()
-    c.execute("SELECT groq_api_key FROM users WHERE id = ?", (session["user_id"],))
+    c.execute(q("SELECT groq_api_key FROM users WHERE id = ?"), (session["user_id"],))
     user = c.fetchone()
     conn.close()
 
@@ -419,7 +480,7 @@ def bookmark_page():
 
     conn = get_db()
     c = conn.cursor()
-    c.execute("SELECT groq_api_key FROM users WHERE id = ?", (session["user_id"],))
+    c.execute(q("SELECT groq_api_key FROM users WHERE id = ?"), (session["user_id"],))
     user = c.fetchone()
     conn.close()
 
