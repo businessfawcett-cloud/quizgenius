@@ -109,6 +109,8 @@ else:
 print(
     f"[DEBUG] USE_POSTGRES: {USE_POSTGRES}, DATABASE_URL: {bool(DATABASE_URL)}"
 )  # Debug
+if USE_POSTGRES:
+    print(f"[DEBUG] DATABASE_URL: {DATABASE_URL[:50]}...")  # Debug
 init_db()
 
 
@@ -342,21 +344,21 @@ def api_sync():
     return jsonify({"api_key": user["groq_api_key"] or ""})
 
 
-@app.route("/debug/env")
-def debug_env():
-    """Debug: show environment and DB info."""
-    return f"""<h2>Environment Debug</h2>
-    <p>USE_POSTGRES: {USE_POSTGRES}</p>
-    <p>DATABASE_URL set: {bool(os.environ.get("DATABASE_URL"))}</p>
-    <p>DATABASE_URL length: {len(os.environ.get("DATABASE_URL", ""))}</p>
-    <p>Session keys: {list(session.keys()) if session else "No session"}</p>
-    <hr>
-    <form action="/login" method="post">
-        <input type="text" name="email" placeholder="email" required>
-        <input type="password" name="password" placeholder="password" required>
-        <button type="submit">Login as test</button>
-    </form>
-    <p><a href="/">Home</a></p>"""
+@app.route("/debug/simple")
+def debug_simple():
+    """Simple debug endpoint."""
+    if "user_id" not in session:
+        return "Not logged in"
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute(q("SELECT groq_api_key FROM users WHERE id = ?"), (session["user_id"],))
+    user = c.fetchone()
+    conn.close()
+
+    if user:
+        return f"API Key from DB: '{user['groq_api_key']}' (length: {len(user['groq_api_key']) if user['groq_api_key'] else 0})"
+    return "No user found"
 
 
 @app.route("/api/key")
