@@ -333,37 +333,65 @@ def api_sync():
     return jsonify({"api_key": user["groq_api_key"] or ""})
 
 
-@app.route("/debug/db")
-def debug_db():
-    """Debug: check database state."""
+@app.route("/debug/raw")
+def debug_raw():
+    """Debug: run raw SQL."""
     if "user_id" not in session:
         return "Not logged in"
 
     conn = get_db()
     c = conn.cursor()
-    c.execute(
-        q("SELECT id, email, groq_api_key FROM users WHERE id = ?"),
-        (session["user_id"],),
-    )
-    user = c.fetchone()
-    conn.close()
 
-    if user:
-        return f"User: {user['email']}<br>API Key: {user['groq_api_key'] or 'NOT SET'}"
-    return "User not found"
+    try:
+        c.execute(
+            q("SELECT id, email, groq_api_key FROM users WHERE id = ?"),
+            (session["user_id"],),
+        )
+        user = c.fetchone()
+
+        c.execute(
+            q("SELECT COUNT(*) FROM quiz_history WHERE user_id = ?"),
+            (session["user_id"],),
+        )
+        history_count = c.fetchone()[0] if USE_POSTGRES else c.fetchone()[0]
+
+        conn.close()
+
+        if user:
+            return f"""<h2>Raw DB Query Results</h2>
+            <p>User ID: {user["id"]}</p>
+            <p>Email: {user["email"]}</p>
+            <p>API Key: {user["groq_api_key"] or "(NULL/EMPTY)"}</p>
+            <p>API Key Length: {len(user["groq_api_key"]) if user["groq_api_key"] else 0}</p>
+            <p>History Count: {history_count}</p>
+            <hr>
+            <p><a href="/dashboard">Go to Dashboard</a></p>
+            <p><a href="/settings">Go to Settings</a></p>"""
+        else:
+            return "User not found"
+    except Exception as e:
+        conn.close()
+        return f"Error: {str(e)}"
 
 
 @app.route("/api/key")
 def api_key():
     """Return API key for logged-in user (for bookmarklet)."""
     if "user_id" not in session:
+        print("[DEBUG] /api/key: Not logged in")
         return jsonify({"api_key": "", "user_id": ""})
+
+    print(f"[DEBUG] /api/key: user_id={session['user_id']}")  # Debug
 
     conn = get_db()
     c = conn.cursor()
     c.execute(q("SELECT groq_api_key FROM users WHERE id = ?"), (session["user_id"],))
     user = c.fetchone()
     conn.close()
+
+    print(f"[DEBUG] /api/key: user={user}")  # Debug
+    if user:
+        print(f"[DEBUG] /api/key: api_key={user['groq_api_key']}")  # Debug
 
     if user:
         return jsonify(
