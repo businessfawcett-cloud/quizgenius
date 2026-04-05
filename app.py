@@ -333,45 +333,26 @@ def api_sync():
     return jsonify({"api_key": user["groq_api_key"] or ""})
 
 
-@app.route("/debug/raw")
-def debug_raw():
-    """Debug: run raw SQL."""
+@app.route("/debug/env")
+def debug_env():
+    """Debug: show environment and DB info."""
     if "user_id" not in session:
         return "Not logged in"
 
     conn = get_db()
     c = conn.cursor()
+    c.execute("SELECT version()")
+    version = c.fetchone()[0] if USE_POSTGRES else "SQLite"
+    conn.close()
 
-    try:
-        c.execute(
-            q("SELECT id, email, groq_api_key FROM users WHERE id = ?"),
-            (session["user_id"],),
-        )
-        user = c.fetchone()
-
-        c.execute(
-            q("SELECT COUNT(*) FROM quiz_history WHERE user_id = ?"),
-            (session["user_id"],),
-        )
-        history_count = c.fetchone()[0] if USE_POSTGRES else c.fetchone()[0]
-
-        conn.close()
-
-        if user:
-            return f"""<h2>Raw DB Query Results</h2>
-            <p>User ID: {user["id"]}</p>
-            <p>Email: {user["email"]}</p>
-            <p>API Key: {user["groq_api_key"] or "(NULL/EMPTY)"}</p>
-            <p>API Key Length: {len(user["groq_api_key"]) if user["groq_api_key"] else 0}</p>
-            <p>History Count: {history_count}</p>
-            <hr>
-            <p><a href="/dashboard">Go to Dashboard</a></p>
-            <p><a href="/settings">Go to Settings</a></p>"""
-        else:
-            return "User not found"
-    except Exception as e:
-        conn.close()
-        return f"Error: {str(e)}"
+    return f"""<h2>Environment Debug</h2>
+    <p>USE_POSTGRES: {USE_POSTGRES}</p>
+    <p>DATABASE_URL set: {bool(os.environ.get("DATABASE_URL"))}</p>
+    <p>DB Version: {version}</p>
+    <p>Session user_id: {session.get("user_id", "NOT SET")}</p>
+    <hr>
+    <p><a href="/dashboard">Dashboard</a></p>
+    <p><a href="/settings">Settings</a></p>"""
 
 
 @app.route("/api/key")
