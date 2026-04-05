@@ -152,8 +152,8 @@ def register():
             c = get_cursor(conn)
             c.execute(q("SELECT id FROM users WHERE email = ?"), (email,))
             if c.fetchone():
-                flash("Email already registered", "error")
                 conn.close()
+                flash("Email already registered", "error")
                 return render_template("register.html")
 
             c.execute(
