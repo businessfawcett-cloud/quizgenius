@@ -17,11 +17,23 @@ from flask import (
 from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
 
+print("=== STARTING APPLICATION ===")  # Debug
+print(f"Environment keys: {list(os.environ.keys())}")  # Debug
+
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", str(uuid.uuid4()))
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
+print(f"DATABASE_URL from env: {DATABASE_URL}")  # Debug
+print(f"DATABASE_URL type: {type(DATABASE_URL)}")  # Debug
+print(f"DATABASE_URL is None: {DATABASE_URL is None}")  # Debug
+if DATABASE_URL:
+    print(
+        f"DATABASE_URL starts with postgresql: {DATABASE_URL.startswith('postgresql://')}"
+    )  # Debug
+
 USE_POSTGRES = DATABASE_URL and DATABASE_URL.startswith("postgresql://")
+print(f"USE_POSTGRES: {USE_POSTGRES}")  # Debug
 
 if USE_POSTGRES:
     import psycopg2
@@ -344,23 +356,6 @@ def api_sync():
     return jsonify({"api_key": user["groq_api_key"] or ""})
 
 
-@app.route("/debug/simple")
-def debug_simple():
-    """Simple debug endpoint."""
-    if "user_id" not in session:
-        return "Not logged in"
-
-    conn = get_db()
-    c = conn.cursor()
-    c.execute(q("SELECT groq_api_key FROM users WHERE id = ?"), (session["user_id"],))
-    user = c.fetchone()
-    conn.close()
-
-    if user:
-        return f"API Key from DB: '{user['groq_api_key']}' (length: {len(user['groq_api_key']) if user['groq_api_key'] else 0})"
-    return "No user found"
-
-
 @app.route("/api/key")
 def api_key():
     """Return API key for logged-in user (for bookmarklet)."""
@@ -496,23 +491,6 @@ def bookmark_page():
     return render_template(
         "bookmark.html", api_key=user["groq_api_key"] if user else ""
     )
-
-
-@app.route("/debug/simple")
-def debug_simple():
-    """Simple debug endpoint."""
-    if "user_id" not in session:
-        return "Not logged in"
-
-    conn = get_db()
-    c = conn.cursor()
-    c.execute(q("SELECT groq_api_key FROM users WHERE id = ?"), (session["user_id"],))
-    user = c.fetchone()
-    conn.close()
-
-    if user:
-        return f"API Key from DB: '{user['groq_api_key']}' (length: {len(user['groq_api_key']) if user['groq_api_key'] else 0})"
-    return "No user found"
 
 
 if __name__ == "__main__":
