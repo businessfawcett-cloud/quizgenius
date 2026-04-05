@@ -535,37 +535,51 @@
                 console.log('Answer:', a);
                 
                 if (found.length > 0) {
-                    // Try different selectors for options
-                    var optSelectors = [
-                        'span.choiceText.rs_preserve > p',
-                        'label',
-                        '.option',
-                        'li',
-                        'button',
-                        'div[role="checkbox"]',
-                        '[class*="choice"]',
-                        '[class*="option"]'
-                    ];
+                    // Find actual option elements by text content
+                    var allClickable = document.querySelectorAll('label, li, button, [role="radio"], [role="option"], [class*="choice"], [class*="option"], .rs_preserve, span');
+                    var optionsFound = [];
                     
-                    var optEls = [];
-                    for (var s = 0; s < optSelectors.length; s++) {
-                        var els = document.querySelectorAll(optSelectors[s]);
-                        if (els.length > 0) {
-                            optEls = Array.from(els);
-                            console.log('Found elements with:', optSelectors[s], 'count:', optEls.length);
-                            break;
+                    for (var i = 0; i < allClickable.length; i++) {
+                        var text = allClickable[i].textContent.trim();
+                        // Check if this element's text matches any of our options
+                        for (var j = 0; j < opts.length; j++) {
+                            if (text === opts[j] || text.toLowerCase() === lowerOpts[j]) {
+                                optionsFound.push({ index: j, element: allClickable[i] });
+                                break;
+                            }
                         }
                     }
                     
-                    // Click all found options
-                    found.forEach(function(idx) {
-                        if (optEls[idx]) {
-                            console.log('Clicking option', idx, optEls[idx].textContent.substring(0, 20));
-                            try { optEls[idx].click(); } catch(e) {
-                                try { optEls[idx].parentElement.click(); } catch(e2) {}
+                    console.log('Found clickable options:', optionsFound.length);
+                    
+                    // Click the ones that match our answer
+                    var clicked = false;
+                    found.forEach(function(optIdx) {
+                        for (var i = 0; i < optionsFound.length; i++) {
+                            if (optionsFound[i].index === optIdx) {
+                                console.log('Clicking:', optionsFound[i].element.textContent.substring(0, 20));
+                                try { 
+                                    optionsFound[i].element.click(); 
+                                    clicked = true;
+                                } catch(e) {
+                                    try { optionsFound[i].element.parentElement.click(); clicked = true; } catch(e2) {}
+                                }
                             }
                         }
                     });
+                    
+                    if (!clicked) {
+                        // Fallback: try clicking by text content directly
+                        for (var i = 0; i < allClickable.length; i++) {
+                            var t = allClickable[i].textContent.trim().toLowerCase();
+                            for (var j = 0; j < found.length; j++) {
+                                if (t === lowerOpts[found[j]]) {
+                                    console.log('Fallback click:', t);
+                                    try { allClickable[i].click(); clicked = true; } catch(e) {}
+                                }
+                            }
+                        }
+                    }
                     
                     // Rate confidence then next
                     setTimeout(function() {
