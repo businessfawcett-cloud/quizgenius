@@ -231,15 +231,18 @@ def dashboard():
     if "user_id" not in session:
         return redirect(url_for("login"))
 
+    print(f"[DEBUG Dashboard] user_id from session: {session['user_id']}")  # Debug
+
     conn = get_db()
     c = conn.cursor()
 
     c.execute(q("SELECT groq_api_key FROM users WHERE id = ?"), (session["user_id"],))
     user = c.fetchone()
-    print(f"[DEBUG] Dashboard: user_id={session['user_id']}, user={user}")  # Debug
-
+    print(f"[DEBUG Dashboard] user query result: {user}")  # Debug
     if user:
-        print(f"[DEBUG] Dashboard: API key from DB: {user['groq_api_key']}")  # Debug
+        print(f"[DEBUG Dashboard] api_key from DB: '{user['groq_api_key']}'")  # Debug
+    else:
+        print(f"[DEBUG Dashboard] user NOT FOUND in database")  # Debug
 
     c.execute(
         q("""
@@ -286,14 +289,31 @@ def settings():
 
     if request.method == "POST":
         api_key = request.form.get("groq_api_key", "").strip()
+        print(
+            f"[DEBUG Settings] Saving API key for user_id={session['user_id']}, key_length={len(api_key)}"
+        )  # Debug
 
         conn = get_db()
         c = conn.cursor()
         c.execute(
-            q("UPDATE users SET groq_api_key = ? WHERE id = ?"),
+            q(
+                "UPDATE users SET groq_api_key = %s WHERE id = %s"
+                if USE_POSTGRES
+                else "UPDATE users SET groq_api_key = ? WHERE id = ?"
+            ),
             (api_key, session["user_id"]),
         )
         conn.commit()
+
+        # Verify it was saved
+        c.execute(
+            q("SELECT groq_api_key FROM users WHERE id = ?"), (session["user_id"],)
+        )
+        verify = c.fetchone()
+        print(
+            f"[DEBUG Settings] After save: {verify['groq_api_key'] if verify else 'NOT FOUND'}"
+        )  # Debug
+
         conn.close()
 
         flash("API key saved!", "success")
