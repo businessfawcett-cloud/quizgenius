@@ -213,6 +213,10 @@ def dashboard():
 
     c.execute(q("SELECT groq_api_key FROM users WHERE id = ?"), (session["user_id"],))
     user = c.fetchone()
+    print(f"[DEBUG] Dashboard: user_id={session['user_id']}, user={user}")  # Debug
+
+    if user:
+        print(f"[DEBUG] Dashboard: API key from DB: {user['groq_api_key']}")  # Debug
 
     c.execute(
         q("""
@@ -221,7 +225,7 @@ def dashboard():
                AVG(score) as avg_score,
                COUNT(*) as total_quizzes
         FROM quiz_history WHERE user_id = ?
-    """),
+        """),
         (session["user_id"],),
     )
     stats = c.fetchone()
@@ -231,7 +235,7 @@ def dashboard():
         SELECT * FROM quiz_history 
         WHERE user_id = ? 
         ORDER BY completed_at DESC LIMIT 10
-    """),
+        """),
         (session["user_id"],),
     )
     history = c.fetchall()
