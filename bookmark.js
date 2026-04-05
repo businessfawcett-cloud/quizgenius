@@ -496,25 +496,43 @@
                 console.log('AI Response:', a);
                 document.getElementById('s').innerText = 'Ans: ' + a.substring(0, 30);
                 
-                // For multi-select, we need to find multiple answers
+                // Flexible matching - try multiple strategies
                 var found = [];
-                var lowerOpts = opts.map(function(o) { return o.toLowerCase(); });
-                var lowerA = a.toLowerCase();
+                var lowerOpts = opts.map(function(o) { return o.toLowerCase().trim(); });
+                var lowerA = a.toLowerCase().trim();
                 
-                // Split by comma and check each
-                var answers = a.split(',').map(function(s) { return s.trim().toLowerCase(); });
+                // Strategy 1: Exact match
+                for (var i = 0; i < lowerOpts.length; i++) {
+                    if (lowerA === lowerOpts[i] || lowerA === '"' + lowerOpts[i] + '"') {
+                        found.push(i);
+                    }
+                }
                 
-                for (var i = 0; i < opts.length; i++) {
-                    // Check if any of the answer parts match this option
-                    for (var j = 0; j < answers.length; j++) {
-                        if (answers[j] && lowerOpts[i].includes(answers[j])) {
+                // Strategy 2: Option contains answer word
+                if (found.length === 0) {
+                    var answerWords = lowerA.replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(function(w) { return w.length > 2; });
+                    for (var i = 0; i < lowerOpts.length; i++) {
+                        for (var j = 0; j < answerWords.length; j++) {
+                            if (lowerOpts[i].includes(answerWords[j])) {
+                                found.push(i);
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                // Strategy 3: Answer contains option
+                if (found.length === 0) {
+                    for (var i = 0; i < lowerOpts.length; i++) {
+                        if (lowerA.includes(lowerOpts[i])) {
                             found.push(i);
-                            break;
                         }
                     }
                 }
                 
                 console.log('Found options to click:', found);
+                console.log('Options:', opts);
+                console.log('Answer:', a);
                 
                 if (found.length > 0) {
                     // Try different selectors for options
