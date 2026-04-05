@@ -32,6 +32,9 @@ if USE_POSTGRES:
         return conn
 
     def init_db():
+        print(
+            f"[DEBUG] Initializing PostgreSQL DB with URL: {DATABASE_URL[:50]}..."
+        )  # Debug
         conn = get_db()
         c = conn.cursor()
         c.execute("""
@@ -56,6 +59,7 @@ if USE_POSTGRES:
         """)
         conn.commit()
         conn.close()
+        print("[DEBUG] PostgreSQL tables initialized")  # Debug
 
     def dict_row(cursor):
         return RealDictCursor
@@ -70,6 +74,7 @@ else:
         return conn
 
     def init_db():
+        print(f"[DEBUG] Initializing SQLite DB at: {DB_PATH}")  # Debug
         conn = get_db()
         c = conn.cursor()
         c.execute("""
@@ -95,11 +100,15 @@ else:
         """)
         conn.commit()
         conn.close()
+        print("[DEBUG] SQLite tables initialized")  # Debug
 
     def dict_row(cursor):
         return None
 
 
+print(
+    f"[DEBUG] USE_POSTGRES: {USE_POSTGRES}, DATABASE_URL: {bool(DATABASE_URL)}"
+)  # Debug
 init_db()
 
 
