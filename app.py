@@ -40,15 +40,22 @@ if USE_POSTGRES:
     from psycopg2.extras import RealDictCursor
 
     def get_db():
-        conn = psycopg2.connect(DATABASE_URL)
-        return conn
+        print(f"[DEBUG] Connecting to PostgreSQL: {DATABASE_URL[:30]}...")  # Debug
+        try:
+            conn = psycopg2.connect(DATABASE_URL)
+            print(f"[DEBUG] PostgreSQL connection successful")  # Debug
+            return conn
+        except Exception as e:
+            print(f"[DEBUG] PostgreSQL connection failed: {e}")  # Debug
+            raise
+
+    def get_cursor(conn):
+        return conn.cursor(cursor_factory=RealDictCursor)
 
     def init_db():
-        print(
-            f"[DEBUG] Initializing PostgreSQL DB with URL: {DATABASE_URL[:50]}..."
-        )  # Debug
+        print(f"[DEBUG] Initializing PostgreSQL DB")  # Debug
         conn = get_db()
-        c = conn.cursor()
+        c = get_cursor(conn)
         c.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
@@ -71,7 +78,7 @@ if USE_POSTGRES:
         """)
         conn.commit()
         conn.close()
-        print("[DEBUG] PostgreSQL tables initialized")  # Debug
+        print(f"[DEBUG] PostgreSQL tables initialized")  # Debug
 
     def dict_row(cursor):
         return RealDictCursor
@@ -79,16 +86,21 @@ else:
     import sqlite3
 
     DB_PATH = os.path.join(os.path.dirname(__file__), "quizgenius.db")
+    print(f"[DEBUG] Using SQLite database at: {DB_PATH}")  # Debug
 
     def get_db():
+        print(f"[DEBUG] Connecting to SQLite: {DB_PATH}")  # Debug
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row
         return conn
 
+    def get_cursor(conn):
+        return conn.cursor()
+
     def init_db():
-        print(f"[DEBUG] Initializing SQLite DB at: {DB_PATH}")  # Debug
+        print(f"[DEBUG] Initializing SQLite DB")  # Debug
         conn = get_db()
-        c = conn.cursor()
+        c = get_cursor(conn)
         c.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -112,7 +124,7 @@ else:
         """)
         conn.commit()
         conn.close()
-        print("[DEBUG] SQLite tables initialized")  # Debug
+        print(f"[DEBUG] SQLite tables initialized")  # Debug
 
     def dict_row(cursor):
         return None
@@ -165,8 +177,8 @@ def register():
             return render_template("register.html")
 
         try:
-            conn = get_db()
-            c = conn.cursor()
+    conn = get_db()
+    c = get_cursor(conn)
             c.execute(q("SELECT id FROM users WHERE email = ?"), (email,))
             if c.fetchone():
                 flash("Email already registered", "error")
@@ -234,7 +246,7 @@ def dashboard():
     print(f"[DEBUG Dashboard] user_id from session: {session['user_id']}")  # Debug
 
     conn = get_db()
-    c = conn.cursor()
+    c = get_cursor(conn)
 
     c.execute(q("SELECT groq_api_key FROM users WHERE id = ?"), (session["user_id"],))
     user = c.fetchone()
@@ -282,7 +294,7 @@ def settings():
         return redirect(url_for("login"))
 
     conn = get_db()
-    c = conn.cursor()
+    c = get_cursor(conn)
     c.execute(q("SELECT groq_api_key FROM users WHERE id = ?"), (session["user_id"],))
     user = c.fetchone()
     conn.close()
@@ -335,7 +347,7 @@ def api_sync():
         return jsonify({"error": "user_id required"}), 401
 
     conn = get_db()
-    c = conn.cursor()
+    c = get_cursor(conn)
 
     c.execute(q("SELECT * FROM users WHERE id = ?"), (user_id,))
     user = c.fetchone()
@@ -386,7 +398,7 @@ def api_key():
     print(f"[DEBUG] /api/key: user_id={session['user_id']}")  # Debug
 
     conn = get_db()
-    c = conn.cursor()
+    c = get_cursor(conn)
     c.execute(q("SELECT groq_api_key FROM users WHERE id = ?"), (session["user_id"],))
     user = c.fetchone()
     conn.close()
@@ -503,7 +515,7 @@ def bookmark_page():
         return redirect(url_for("login"))
 
     conn = get_db()
-    c = conn.cursor()
+    c = get_cursor(conn)
     c.execute(q("SELECT groq_api_key FROM users WHERE id = ?"), (session["user_id"],))
     user = c.fetchone()
     conn.close()
