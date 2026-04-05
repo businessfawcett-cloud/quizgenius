@@ -17,43 +17,24 @@ from flask import (
 from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
 
-print("=== STARTING APPLICATION ===")  # Debug
-print(f"Environment keys: {list(os.environ.keys())}")  # Debug
-
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", str(uuid.uuid4()))
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
-print(f"DATABASE_URL from env: {DATABASE_URL}")  # Debug
-print(f"DATABASE_URL type: {type(DATABASE_URL)}")  # Debug
-print(f"DATABASE_URL is None: {DATABASE_URL is None}")  # Debug
-if DATABASE_URL:
-    print(
-        f"DATABASE_URL starts with postgresql: {DATABASE_URL.startswith('postgresql://')}"
-    )  # Debug
-
 USE_POSTGRES = DATABASE_URL and DATABASE_URL.startswith("postgresql://")
-print(f"USE_POSTGRES: {USE_POSTGRES}")  # Debug
 
 if USE_POSTGRES:
     import psycopg2
     from psycopg2.extras import RealDictCursor
 
     def get_db():
-        print(f"[DEBUG] Connecting to PostgreSQL: {DATABASE_URL[:30]}...")  # Debug
-        try:
-            conn = psycopg2.connect(DATABASE_URL)
-            print(f"[DEBUG] PostgreSQL connection successful")  # Debug
-            return conn
-        except Exception as e:
-            print(f"[DEBUG] PostgreSQL connection failed: {e}")  # Debug
-            raise
+        conn = psycopg2.connect(DATABASE_URL)
+        return conn
 
     def get_cursor(conn):
         return conn.cursor(cursor_factory=RealDictCursor)
 
     def init_db():
-        print(f"[DEBUG] Initializing PostgreSQL DB")  # Debug
         conn = get_db()
         c = get_cursor(conn)
         c.execute("""
@@ -78,7 +59,6 @@ if USE_POSTGRES:
         """)
         conn.commit()
         conn.close()
-        print(f"[DEBUG] PostgreSQL tables initialized")  # Debug
 
     def dict_row(cursor):
         return RealDictCursor
@@ -86,10 +66,8 @@ else:
     import sqlite3
 
     DB_PATH = os.path.join(os.path.dirname(__file__), "quizgenius.db")
-    print(f"[DEBUG] Using SQLite database at: {DB_PATH}")  # Debug
 
     def get_db():
-        print(f"[DEBUG] Connecting to SQLite: {DB_PATH}")  # Debug
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row
         return conn
@@ -98,7 +76,6 @@ else:
         return conn.cursor()
 
     def init_db():
-        print(f"[DEBUG] Initializing SQLite DB")  # Debug
         conn = get_db()
         c = get_cursor(conn)
         c.execute("""
@@ -124,17 +101,11 @@ else:
         """)
         conn.commit()
         conn.close()
-        print(f"[DEBUG] SQLite tables initialized")  # Debug
 
     def dict_row(cursor):
         return None
 
 
-print(
-    f"[DEBUG] USE_POSTGRES: {USE_POSTGRES}, DATABASE_URL: {bool(DATABASE_URL)}"
-)  # Debug
-if USE_POSTGRES:
-    print(f"[DEBUG] DATABASE_URL: {DATABASE_URL[:50]}...")  # Debug
 init_db()
 
 
@@ -177,8 +148,8 @@ def register():
             return render_template("register.html")
 
         try:
-    conn = get_db()
-    c = get_cursor(conn)
+            conn = get_db()
+            c = get_cursor(conn)
             c.execute(q("SELECT id FROM users WHERE email = ?"), (email,))
             if c.fetchone():
                 flash("Email already registered", "error")
@@ -214,7 +185,7 @@ def login():
         password = request.form.get("password", "")
 
         conn = get_db()
-        c = conn.cursor()
+        c = get_cursor(conn)
         c.execute(
             q("SELECT id, email, password_hash FROM users WHERE email = ?"), (email,)
         )
@@ -243,18 +214,11 @@ def dashboard():
     if "user_id" not in session:
         return redirect(url_for("login"))
 
-    print(f"[DEBUG Dashboard] user_id from session: {session['user_id']}")  # Debug
-
     conn = get_db()
     c = get_cursor(conn)
 
     c.execute(q("SELECT groq_api_key FROM users WHERE id = ?"), (session["user_id"],))
     user = c.fetchone()
-    print(f"[DEBUG Dashboard] user query result: {user}")  # Debug
-    if user:
-        print(f"[DEBUG Dashboard] api_key from DB: '{user['groq_api_key']}'")  # Debug
-    else:
-        print(f"[DEBUG Dashboard] user NOT FOUND in database")  # Debug
 
     c.execute(
         q("""
@@ -301,31 +265,14 @@ def settings():
 
     if request.method == "POST":
         api_key = request.form.get("groq_api_key", "").strip()
-        print(
-            f"[DEBUG Settings] Saving API key for user_id={session['user_id']}, key_length={len(api_key)}"
-        )  # Debug
 
         conn = get_db()
-        c = conn.cursor()
+        c = get_cursor(conn)
         c.execute(
-            q(
-                "UPDATE users SET groq_api_key = %s WHERE id = %s"
-                if USE_POSTGRES
-                else "UPDATE users SET groq_api_key = ? WHERE id = ?"
-            ),
+            q("UPDATE users SET groq_api_key = ? WHERE id = ?"),
             (api_key, session["user_id"]),
         )
         conn.commit()
-
-        # Verify it was saved
-        c.execute(
-            q("SELECT groq_api_key FROM users WHERE id = ?"), (session["user_id"],)
-        )
-        verify = c.fetchone()
-        print(
-            f"[DEBUG Settings] After save: {verify['groq_api_key'] if verify else 'NOT FOUND'}"
-        )  # Debug
-
         conn.close()
 
         flash("API key saved!", "success")
@@ -351,15 +298,6 @@ def api_sync():
 
     c.execute(q("SELECT * FROM users WHERE id = ?"), (user_id,))
     user = c.fetchone()
-
-    # Debug: log what we found
-    print(
-        f"API sync called: user_id={user_id}, action={action}, user_found={user is not None}"
-    )
-    if user:
-        print(
-            f"User email: {user['email']}, api_key present: {bool(user['groq_api_key'])}"
-        )
 
     if not user:
         conn.close()
@@ -392,20 +330,13 @@ def api_sync():
 def api_key():
     """Return API key for logged-in user (for bookmarklet)."""
     if "user_id" not in session:
-        print("[DEBUG] /api/key: Not logged in")
         return jsonify({"api_key": "", "user_id": ""})
-
-    print(f"[DEBUG] /api/key: user_id={session['user_id']}")  # Debug
 
     conn = get_db()
     c = get_cursor(conn)
     c.execute(q("SELECT groq_api_key FROM users WHERE id = ?"), (session["user_id"],))
     user = c.fetchone()
     conn.close()
-
-    print(f"[DEBUG] /api/key: user={user}")  # Debug
-    if user:
-        print(f"[DEBUG] /api/key: api_key={user['groq_api_key']}")  # Debug
 
     if user:
         return jsonify(
