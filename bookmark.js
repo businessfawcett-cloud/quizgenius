@@ -58,7 +58,23 @@
     document.body.appendChild(p);
     
     var running = false;
-    document.getElementById('st').onclick = function() { running = true; solve(); };
+    var btn = document.getElementById('st');
+    
+    btn.onclick = function() { 
+        if (!running) {
+            running = true;
+            btn.textContent = 'Stop';
+            btn.style.background = '#f44';
+            btn.style.color = '#fff';
+            solve();
+        } else {
+            running = false;
+            btn.textContent = 'Start';
+            btn.style.background = '#0f8';
+            btn.style.color = '#000';
+            document.getElementById('s').innerText = 'Stopped';
+        }
+    };
     
     function getQuestionType() {
         var body = document.body.textContent.toLowerCase();
@@ -320,7 +336,7 @@
         setTimeout(function() { 
             var clicked = false;
             
-            // First, try "Skip to Main Content" link - LOOK MORE AGGRESSIVELY
+            // First, try "Skip to Main Content" link
             var links = document.querySelectorAll('a, link, span[role="link"]');
             for (var i = 0; i < links.length; i++) {
                 var t = links[i].textContent.trim().toLowerCase();
@@ -334,13 +350,12 @@
                 }
             }
             
-            // Check if this might be the LAST question (no more questions)
+            // Check if this might be the LAST question
             var bodyText = document.body.textContent.toLowerCase();
-            var isLastQuestion = bodyText.includes('submit') && (bodyText.includes('last question') || bodyText.includes('37 of') || bodyText.includes('final') || bodyText.includes('done'));
+            var isLastQuestion = bodyText.includes('submit') && (bodyText.includes('last question') || bodyText.includes('42 of') || bodyText.includes('final') || bodyText.includes('done'));
             
             if (isLastQuestion) {
                 document.getElementById('s').innerText = 'Quiz complete! Syncing...';
-                // Sync stats before finishing
                 syncQuizStats();
                 return;
             }
@@ -350,7 +365,7 @@
                 var buttons = document.querySelectorAll('button');
                 for (var i = 0; i < buttons.length; i++) {
                     var t = buttons[i].textContent.trim().toLowerCase();
-                    if (t.includes('next') || t.includes('submit') || t.includes('continue') || t.includes('check')) {
+                    if (t.includes('next') || t.includes('submit') || t.includes('continue') || t.includes('check') || t.includes('next question')) {
                         try {
                             buttons[i].click();
                             document.getElementById('s').innerText = 'Clicked: ' + t;
@@ -361,14 +376,15 @@
                 }
             }
             
-            // Try links that might be navigation
+            // Try links with navigation text
             if (!clicked) {
-                var links = document.querySelectorAll('a, span, div');
+                var links = document.querySelectorAll('a');
                 for (var i = 0; i < links.length; i++) {
                     var t = links[i].textContent.trim().toLowerCase();
-                    if (t === 'next' || t === 'submit' || t === 'continue' || t === 'check answer') {
+                    if (t.includes('next') || t.includes('continue') || t.includes('next question')) {
                         try {
                             links[i].click();
+                            document.getElementById('s').innerText = 'Clicked link: ' + t;
                             clicked = true;
                             break;
                         } catch(e) {}
@@ -376,19 +392,46 @@
                 }
             }
             
-            // Last resort - click first visible button
+            // Try clicking any element with "next" in class or data attribute
+            if (!clicked) {
+                var all = document.querySelectorAll('[class*="next"], [data*="next"], [aria-label*="next"]');
+                for (var i = 0; i < all.length; i++) {
+                    try {
+                        all[i].click();
+                        document.getElementById('s').innerText = 'Clicked element';
+                        clicked = true;
+                        break;
+                    } catch(e) {}
+                }
+            }
+            
+            // Last resort: try pressing Enter key (sometimes works)
+            if (!clicked) {
+                try {
+                    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true }));
+                    document.getElementById('s').innerText = 'Sent Enter key';
+                    clicked = true;
+                } catch(e) {}
+            }
+            
+            // Absolute last resort: try clicking first visible button
             if (!clicked) {
                 var btns = document.querySelectorAll('button');
                 for (var i = 0; i < btns.length; i++) {
                     var style = window.getComputedStyle(btns[i]);
-                    if (style.display !== 'none' && style.visibility !== 'hidden') {
+                    if (style.display !== 'none' && style.visibility !== 'hidden' && btns[i].offsetParent !== null) {
                         try {
                             btns[i].click();
+                            document.getElementById('s').innerText = 'Clicked any button';
                             clicked = true;
                             break;
                         } catch(e) {}
                     }
                 }
+            }
+            
+            if (!clicked) {
+                document.getElementById('s').innerText = 'Could not find next';
             }
         }, 1500);
     }

@@ -234,16 +234,6 @@ def dashboard():
     """),
         (session["user_id"],),
     )
-    stats = c.fetchone()
-
-    c.execute(
-        """
-        SELECT * FROM quiz_history 
-        WHERE user_id = ? 
-        ORDER BY completed_at DESC LIMIT 10
-    """,
-        (session["user_id"],),
-    )
     history = c.fetchall()
 
     conn.close()
