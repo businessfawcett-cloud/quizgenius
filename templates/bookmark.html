@@ -95,10 +95,6 @@
             window.location.href = '/settings';
             return;
         }
-            alert('No API key found. Please add one in Settings.');
-            window.location.href = '/settings';
-            return;
-        }
         
         var loader = "javascript:(function(){var s=document.createElement('script');s.src='https://quizgenius-nji8.onrender.com/bookmark.js?key=" + apiKey + "';document.head.appendChild(s)})();";
         

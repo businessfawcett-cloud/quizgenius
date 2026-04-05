@@ -36,6 +36,15 @@ class DecisionEngine:
         "button:has-text('Submit')",
         "button:has-text('Check')",
         "[data-automation-id='submit-answer']",
+        "button.btn-primary:has-text('Next')",
+        "button.btn-primary:has-text('Submit')",
+    ]
+
+    # Check my work button (validates answer)
+    CHECK_MY_WORK_SELECTORS = [
+        "button:has-text('Check my work')",
+        "[data-automation-id='check-answer']",
+        "button.btn-primary:has-text('Check')",
     ]
 
     # "Select a concept resource to continue" dropdown / expand button
@@ -104,46 +113,108 @@ class DecisionEngine:
         return await self._click_option(best_match)
 
     async def submit_confidence_and_next(self):
-        """Click the confidence button (if present) and then the Next button."""
-        # For fill-in-blank questions, we need to click the confidence button first
-        # Try confidence buttons first
-        for sel in self.CONFIDENCE_SELECTORS:
+        """Click Check My Work (if available), verify answer, then click Next."""
+
+        # First check if we're in Check My Work mode - need to return to question first
+        try:
+            body = await self.browser.get_text("body")
+            body_lower = body.lower()
+
+            if "check my work" in body_lower and "return to question" in body_lower:
+                logger.info(
+                    "In Check My Work mode - returning to question to answer properly"
+                )
+                for sel in [
+                    "button:has-text('Return to question')",
+                    "a:has-text('Return to question')",
+                ]:
+                    try:
+                        await self.browser.click(sel, timeout=5000)
+                        logger.info("Clicked Return to question")
+                        await asyncio.sleep(2)
+                        return  # Will re-parse and re-answer
+                    except:
+                        continue
+        except Exception:
+            pass
+
+        # Step 1: Try clicking "Check my work" button first
+        check_work_clicked = False
+        has_check_button = False
+
+        for sel in self.CHECK_MY_WORK_SELECTORS:
             try:
                 count = await self.browser.get_element_count(sel)
                 if count > 0:
-                    # Check if button is enabled
+                    has_check_button = True
                     btn = await self.browser.page.query_selector(sel)
                     if btn:
                         is_disabled = await btn.get_attribute("disabled")
                         if is_disabled:
-                            logger.debug(
-                                f"Confidence button {sel} is disabled, waiting..."
-                            )
-                            await asyncio.sleep(2)
-                            # Try again after waiting
-                            btn = await self.browser.page.query_selector(sel)
-                            is_disabled = (
-                                await btn.get_attribute("disabled") if btn else True
-                            )
-                            if is_disabled:
-                                continue  # Still disabled, try next button
-
-                    await self.browser.click(sel, timeout=5_000)
-                    logger.info("Clicked confidence button: %s", sel)
-                    await asyncio.sleep(1)
-                    break
+                            continue
+                        await btn.click()
+                        logger.info(f"Clicked Check My Work: {sel}")
+                        await asyncio.sleep(2)
+                        check_work_clicked = True
+                        break
             except Exception:
                 continue
 
-        # Now try the Next button
+        # If there's no Check My Work button, flag it and proceed
+        if not has_check_button:
+            logger.warning(
+                "No 'Check my work' button found - flagging for manual review"
+            )
+
+        # Step 2: If Check My Work was clicked, verify answer correctness
+        if check_work_clicked:
+            try:
+                body = await self.browser.get_text("body")
+                body_lower = body.lower()
+
+                # Check if we can determine if answer was correct
+                if "correct" in body_lower and "incorrect" in body_lower:
+                    if "incorrect" in body_lower or "wrong" in body_lower:
+                        logger.warning(
+                            "Answer appears to be INCORRECT - flagging for manual review"
+                        )
+                        for sel in [
+                            "button:has-text('Return to question')",
+                            "a:has-text('Return to')",
+                        ]:
+                            try:
+                                await self.browser.click(sel, timeout=3000)
+                                logger.info(
+                                    "Returned to question after incorrect answer"
+                                )
+                                await asyncio.sleep(1)
+                                return
+                            except:
+                                continue
+                    else:
+                        logger.info("Answer appears to be CORRECT")
+                elif "correct" in body_lower:
+                    logger.info("Answer appears to be CORRECT")
+            except Exception as e:
+                logger.debug(f"Could not verify answer: {e}")
+
+        # Step 3: Click Next button to proceed
         for sel in self.NEXT_SELECTORS:
             try:
                 count = await self.browser.get_element_count(sel)
                 if count > 0:
-                    await self.browser.click(sel, timeout=5_000)
-                    logger.info("Clicked next/submit: %s", sel)
-                    await asyncio.sleep(2)
-                    return
+                    buttons = await self.browser.page.query_selector_all(sel)
+                    for btn in buttons:
+                        try:
+                            is_visible = await btn.is_visible()
+                            if is_visible:
+                                text = await btn.inner_text()
+                                await btn.click()
+                                logger.info(f"Clicked next: {sel} - '{text.strip()}'")
+                                await asyncio.sleep(2)
+                                return
+                        except Exception:
+                            continue
             except Exception:
                 continue
 
@@ -407,26 +478,33 @@ class DecisionEngine:
         where options are locked and we need to review a resource."""
         try:
             body_text = await self.browser.get_text("body", timeout=5_000)
-            wrong_indicators = [
-                "your answer incorrect",
-                "you must review a resource",
-                "select a concept resource to continue",
-                "before moving on, you must review",
-                "answer mode",
-                "incorrect",
-                "try again",
-            ]
             body_lower = body_text.lower()
-            for indicator in wrong_indicators:
+
+            # If "Check my work" is in the page, we're in verification mode - not wrong answer feedback
+            if "check my work" in body_lower:
+                return False
+
+            # Check if we're on the feedback page (not the original question)
+            feedback_indicators = [
+                "select a concept resource to continue",
+                "you must review a resource",
+                "your answer incorrect",
+                "before moving on, you must review",
+            ]
+
+            for indicator in feedback_indicators:
                 if indicator in body_lower:
                     logger.debug("Wrong-answer indicator matched: '%s'", indicator)
                     return True
+
+            # Check if there's a "Return to question" without "Check my work"
+            if "return to question" in body_lower:
+                return True
+
         except Exception:
             pass
 
         return False
-
-    async def handle_incorrect_feedback(self) -> bool:
         """Handle the incorrect answer feedback page.
         Click 'Select a concept resource' then 'Next Question' to continue."""
         try:
@@ -511,11 +589,46 @@ class DecisionEngine:
     # ------------------------------------------------------------------
     async def _click_option(self, option_text: str) -> bool:
         """Click the DOM element whose visible text matches *option_text*."""
-        # Strategy 1: use Playwright's text selector
+        # For ezto format, try clicking by label text
         try:
-            selector = f"text='{option_text}'"
+            # Try label selector - labels contain option text
+            labels = await self.browser.page.query_selector_all("label")
+            for label in labels:
+                try:
+                    text = (await label.inner_text()).strip()
+                    if (
+                        option_text.lower() in text.lower()
+                        or text.lower() in option_text.lower()
+                    ):
+                        await label.click()
+                        logger.info(f"Clicked option via label: {text[:50]}")
+                        return True
+                except Exception:
+                    continue
+        except Exception:
+            pass
+
+        # Try clicking radio buttons directly
+        try:
+            radios = await self.browser.page.query_selector_all("input[type='radio']")
+            for radio in radios:
+                try:
+                    await radio.click()
+                    logger.info("Clicked radio button")
+                    return True
+                except Exception:
+                    continue
+        except Exception:
+            pass
+
+        # Strategy 1: use Playwright's text selector (partial match)
+        try:
+            # Try partial text matching
+            words = option_text.split()[:3]  # First 3 words
+            partial_text = " ".join(words)
+            selector = f"text='{partial_text}'"
             await self.browser.click(selector, timeout=5_000)
-            logger.debug("Clicked option via text selector.")
+            logger.debug("Clicked option via partial text selector.")
             return True
         except Exception:
             pass
@@ -526,7 +639,11 @@ class DecisionEngine:
                 elements = await self.browser.page.query_selector_all(sel)
                 for el in elements:
                     text = (await el.inner_text()).strip()
-                    if text.lower() == option_text.lower():
+                    # Partial match
+                    if (
+                        option_text.lower() in text.lower()
+                        or text.lower() in option_text.lower()
+                    ):
                         await el.click()
                         logger.debug("Clicked option via selector '%s'.", sel)
                         return True

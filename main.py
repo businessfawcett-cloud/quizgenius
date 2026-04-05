@@ -137,7 +137,9 @@ async def run():
         print(f"  Linked to account!")
     print()
 
-    browser = BrowserController()
+    browser = BrowserController(
+        url_keywords=["learning.mheducation", "ezto.mheducation"]
+    )
     parser = QuestionParser(browser)
     llm = LLMClient()
     engine = DecisionEngine(browser)
@@ -167,118 +169,8 @@ async def run():
         pass
 
     print()
-    print("Opening Chrome...")
-    import subprocess
-    import os
-    import socket
-
-    def is_port_open(host, port, timeout=1):
-        """Check if a port is open."""
-        try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(timeout)
-            result = sock.connect_ex((host, port))
-            sock.close()
-            return result == 0
-        except Exception:
-            return False
-
-    def wait_for_port(host, port, max_wait=30):
-        """Wait for port to be available."""
-        logger.info(f"Waiting for port {port} to be ready...")
-        start = time.time()
-        while time.time() - start < max_wait:
-            if is_port_open(host, port):
-                logger.info(f"Port {port} is ready!")
-                return True
-            time.sleep(1)
-        return False
-
-    chrome_opened = False
-    try:
-        # First try Chrome
-        chrome_paths = [
-            r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-            r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
-        ]
-        chrome_exe = None
-        for path in chrome_paths:
-            if os.path.exists(path):
-                chrome_exe = path
-                break
-
-        if chrome_exe:
-            # Remove old user-data-dir if exists (might be locked)
-            user_data_dir = r"C:\chrome-debug"
-            if os.path.exists(user_data_dir):
-                try:
-                    import shutil
-
-                    shutil.rmtree(user_data_dir, ignore_errors=True)
-                except:
-                    pass
-
-            # Launch Chrome with fresh profile
-            subprocess.Popen(
-                f'"{chrome_exe}" --remote-debugging-port=9222 --user-data-dir="{user_data_dir}" --no-first-run --no-default-browser-check',
-                shell=True,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-            chrome_opened = True
-            logger.info("Chrome started! Waiting for debugging port...")
-    except Exception as e:
-        logger.info(f"Could not auto-open Chrome: {e}")
-
-    # If Chrome didn't work, try Edge
-    if not chrome_opened:
-        try:
-            edge_paths = [
-                r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
-                r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
-            ]
-            for path in edge_paths:
-                if os.path.exists(path):
-                    user_data_dir = r"C:\edge-debug"
-                    if os.path.exists(user_data_dir):
-                        try:
-                            import shutil
-
-                            shutil.rmtree(user_data_dir, ignore_errors=True)
-                        except:
-                            pass
-
-                    subprocess.Popen(
-                        f'"{path}" --remote-debugging-port=9222 --user-data-dir="{user_data_dir}" --no-first-run --no-default-browser-check',
-                        shell=True,
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL,
-                    )
-                    chrome_opened = True
-                    logger.info("Edge started! Waiting for debugging port...")
-                    break
-        except Exception as e:
-            logger.info(f"Could not auto-open Edge: {e}")
-
-    # Wait for the debugging port to be ready
-    if chrome_opened:
-        if wait_for_port("127.0.0.1", 9222, max_wait=30):
-            logger.info("Chrome/Edge debugging port is ready!")
-            time.sleep(2)  # Extra wait for Chrome to fully initialize
-        else:
-            logger.warning("Debugging port not ready, will try to connect anyway...")
-
-        print()
-        print("=" * 50)
-        print("  Chrome opened!")
-        print("  1. Go to your McGraw Hill quiz")
-        print("  2. Wait for it to load")
-        print("  3. Press ENTER when ready (or wait 3 sec)")
-        print("=" * 50)
-        try:
-            input()
-        except:
-            pass
+    print("Using existing Chrome - make sure your quiz is open!")
+    print()
 
     # Now try to connect
     try:

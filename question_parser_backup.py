@@ -39,9 +39,6 @@ class QuestionParser:
             ".question-type",
             "span.qz-type-label",
             "[class*='question-type']",
-            ".question-heading",
-            ".question-header",
-            "h1.question-title",
         ],
         "question_text": [
             ".prompt",
@@ -54,10 +51,6 @@ class QuestionParser:
             ".assessment-question",
             "h3.pg-question",
             ".question-body",
-            ".question-content",
-            ".question-stem",
-            "[data-testid='question-text']",
-            ".ezto-question",
         ],
         "options": [
             ".choiceText",
@@ -76,9 +69,6 @@ class QuestionParser:
             ".answer-container label",
             "div[class*='answer-option']",
             ".quiz-question-answer",
-            ".answer-option",
-            "[data-choice]",
-            ".option-row",
         ],
         "progress": [
             "[aria-label='Assignment Progress']",
@@ -87,15 +77,11 @@ class QuestionParser:
             ".progress-text",
             "div[class*='progress']",
             ".quiz-progress",
-            ".progress-bar",
-            "[data-testid='progress']",
         ],
         "fill_blank_input": [
             "input.fitb-input",
             "input[id^='fitbTesting_response']",
             "input[type='text'].fitb",
-            "input[type='text'][class*='fitb']",
-            "input.answer-input",
         ],
         "fill_blank_question": [
             "Fill in the Blank",
@@ -112,79 +98,18 @@ class QuestionParser:
         """Parse the current page with retry logic."""
         last_error: Exception | None = None
 
-        is_ezto = False
-        try:
-            url = self.browser.page.url.lower()
-            is_ezto = "ezto.mheducation" in url
-        except:
-            pass
-
-        # For ezto, skip normal extraction and use fallback directly
-        if is_ezto:
-            logger.info("Direct ezto mode - using fallback extraction")
-            logger.info("Waiting for page to fully load...")
-            await asyncio.sleep(5)  # Wait longer for initial page load
-
-            # First check if we're in Check My Work mode - need to return to question first
-            try:
-                body_check = await self.browser.get_text("body", timeout=3000)
-                body_lower = body_check.lower()
-
-                if "check my work" in body_lower and "return to question" in body_lower:
-                    logger.info("In Check My Work mode - returning to question first")
-                    for sel in [
-                        "button:has-text('Return to question')",
-                        "a:has-text('Return to question')",
-                    ]:
-                        try:
-                            await self.browser.click(sel, timeout=5000)
-                            logger.info("Clicked Return to question")
-                            await asyncio.sleep(2)
-                            break
-                        except:
-                            continue
-            except Exception as e:
-                logger.debug(f"Could not check for Check My Work mode: {e}")
-
-            # Try multiple times with longer waits
-            for attempt in range(3):
-                ezto_question = await self._extract_ezto_fallback()
-                if (
-                    ezto_question
-                    and ezto_question.question_text
-                    and ezto_question.options
-                ):
-                    logger.info(
-                        f"Ezto extracted (attempt {attempt + 1}): {ezto_question.question_text[:50]}"
-                    )
-                    return ezto_question
-                logger.warning(
-                    f"Ezto extraction attempt {attempt + 1} failed, waiting..."
-                )
-                await asyncio.sleep(3)
-
-            raise RuntimeError("Ezto fallback failed")
-
-        # For non-ezto URLs, wait for network idle
+        # Wait for page to be fully loaded
         try:
             await self.browser.page.wait_for_load_state("networkidle", timeout=10000)
-            await asyncio.sleep(2)
+            await asyncio.sleep(2)  # Extra wait for dynamic content
         except Exception:
-            pass
-
-        if not is_ezto:
-            try:
-                await self.browser.page.wait_for_load_state(
-                    "networkidle", timeout=10000
-                )
-                await asyncio.sleep(2)
-            except Exception:
-                pass
+            pass  # Continue anyway
 
         for attempt in range(1, MAX_RETRIES + 1):
             try:
                 question = await self._extract()
 
+                # For fill-in-the-blank questions, we don't need options
                 is_fill_blank = (
                     question.fill_blank_input_ids
                     and len(question.fill_blank_input_ids) > 0
@@ -206,15 +131,6 @@ class QuestionParser:
                 )
                 if attempt < MAX_RETRIES:
                     await asyncio.sleep(RETRY_DELAY)
-
-        logger.info("Normal extraction failed, trying ezto fallback...")
-        ezto_question = await self._extract_ezto_fallback()
-        if ezto_question and ezto_question.question_text and ezto_question.options:
-            logger.info(
-                "Ezto fallback succeeded: %s",
-                ezto_question.question_text[:80],
-            )
-            return ezto_question
 
         raise RuntimeError(
             f"Failed to parse question after {MAX_RETRIES} attempts: {last_error}"
@@ -550,162 +466,4 @@ class QuestionParser:
         except Exception:
             pass
 
-        # Try ezto format: "Question X of Y"
-        try:
-            body = await self.browser.get_text("body", timeout=5_000)
-            match = re.search(r"Question\s+(\d+)\s+of\s+(\d+)", body, re.IGNORECASE)
-            if match:
-                return int(match.group(1)), int(match.group(2))
-        except Exception:
-            pass
-
         return 0, 0
-
-    async def _extract_ezto_fallback(self) -> ParsedQuestion | None:
-        """Fallback extraction for ezto.mheducation.com format."""
-        try:
-            # Try multiple methods to get text content
-            body = None
-
-            # Method 1: Use Playwright's get_text on body
-            try:
-                body = await self.browser.get_text("body", timeout=5000)
-            except:
-                pass
-
-            # Method 2: If truncated, get text from specific containers
-            if not body or len(body) < 500:
-                try:
-                    # Try to get text from main content area
-                    selectors = [
-                        ".question-content",
-                        ".question-body",
-                        "[role='main']",
-                        "main",
-                    ]
-                    for sel in selectors:
-                        body = await self.browser.get_text(sel, timeout=3000)
-                        if body and len(body) > 500:
-                            break
-                except:
-                    pass
-
-            # Method 3: Use evaluate with document.body.innerText
-            if not body or len(body) < 500:
-                try:
-                    body = await self.browser.page.evaluate("""() => {
-                        let text = '';
-                        // Get text from all visible elements
-                        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
-                        let node;
-                        while(node = walker.nextNode()) {
-                            const parent = node.parentElement;
-                            if (parent && parent.offsetParent !== null) { // visible
-                                text += node.textContent + ' ';
-                            }
-                        }
-                        return text;
-                    }""")
-                except:
-                    pass
-
-            if not body:
-                logger.warning("Ezto fallback: could not get any text content")
-                return None
-
-            logger.info(f"Ezto body text length: {len(body)} chars")
-
-            # Rest of extraction...
-
-            lines = [line.strip() for line in body.split("\n") if line.strip()]
-
-            skip_phrases = [
-                "skip to main content",
-                "answer",
-                "saved",
-                "help",
-                "opens in a new window",
-                "save & exit",
-                "submit",
-                "item",
-                "points",
-                "skipped",
-                "ebook",
-                "print",
-                "references",
-                "check my work",
-                "check my work button is now disabled",
-                "prev",
-                "next",
-                "visit question map",
-                "question map",
-                "total",
-                "drop zone",
-                "empty",
-                "need help",
-                "review these",
-                "concept resources",
-                "rate your confidence",
-                "submit your answer",
-                "©",
-                "privacy",
-                "terms",
-                "rights reserved",
-                "mcgraw",
-                "hill",
-                "matching question",
-                "drag and drop",
-                "skip to",
-                "exit",
-                "reading mode",
-                "question mode",
-                "progress",
-                "concepts completed",
-                "due",
-                "estimated time",
-            ]
-
-            question_text = ""
-            question_type = "Multiple Choice"
-            options = []
-            found_question_type = False
-            found_question = False
-
-            for line in lines:
-                line_lower = line.lower()
-
-                if any(phrase in line_lower for phrase in skip_phrases):
-                    if "multiple" in line_lower and "choice" in line_lower:
-                        question_type = "Multiple Choice"
-                        found_question_type = True
-                    continue
-
-                if not found_question and len(line) > 20 and "?" in line:
-                    question_text = line
-                    found_question = True
-                    continue
-
-                if found_question and len(line) > 10 and len(line) < 200:
-                    if "multiple choice" not in line_lower:
-                        options.append(line)
-
-            if question_text and len(options) >= 2:
-                progress_current, progress_total = await self._parse_progress()
-
-                logger.info(
-                    f"Ezto fallback extracted: {question_text[:50]}... with {len(options)} options"
-                )
-
-                return ParsedQuestion(
-                    question_type=question_type,
-                    question_text=question_text.strip(),
-                    options=options[:10],
-                    progress_current=progress_current,
-                    progress_total=progress_total,
-                    fill_blank_input_ids=[],
-                )
-
-        except Exception as e:
-            logger.debug(f"Ezto fallback extraction failed: {e}")
-
-        return None

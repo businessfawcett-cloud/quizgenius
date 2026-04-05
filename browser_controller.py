@@ -21,6 +21,7 @@ class BrowserController:
             "mcgraw",
             "connect",
             "learning.mheducation",
+            "ezto.mheducation",
         ]
 
     # ------------------------------------------------------------------
@@ -52,13 +53,34 @@ class BrowserController:
             for page in ctx.pages:
                 url = page.url.lower()
                 logger.info("Found tab: %s", page.url)
-                if any(kw in url for kw in self._url_keywords):
-                    self.page = page
-                    self._context = ctx
-                    logger.info("Attached to target page: %s", page.url)
+                for kw in self._url_keywords:
+                    if kw.lower() in url:
+                        self.page = page
+                        self._context = ctx
+                        logger.info(
+                            "MATCHED keyword '%s' - Attached to target page: %s",
+                            kw,
+                            page.url,
+                        )
+                        break
+                if self.page:
                     break
             if self.page:
                 break
+
+        # If no match, try more lenient matching
+        if not self.page:
+            logger.info("No keyword match, trying partial match...")
+            for ctx in self._browser.contexts:
+                for page in ctx.pages:
+                    url = page.url.lower()
+                    if "mheducation" in url or "ezto" in url or "connect" in url:
+                        self.page = page
+                        self._context = ctx
+                        logger.info("Partial match - Attached to: %s", page.url)
+                        break
+                if self.page:
+                    break
 
         # Fallback: pick the first non-chrome:// page (or new-tab-page which is usable)
         if not self.page:
