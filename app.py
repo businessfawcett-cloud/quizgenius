@@ -498,6 +498,23 @@ def bookmark_page():
     )
 
 
+@app.route("/debug/simple")
+def debug_simple():
+    """Simple debug endpoint."""
+    if "user_id" not in session:
+        return "Not logged in"
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute(q("SELECT groq_api_key FROM users WHERE id = ?"), (session["user_id"],))
+    user = c.fetchone()
+    conn.close()
+
+    if user:
+        return f"API Key from DB: '{user['groq_api_key']}' (length: {len(user['groq_api_key']) if user['groq_api_key'] else 0})"
+    return "No user found"
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
