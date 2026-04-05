@@ -345,23 +345,18 @@ def api_sync():
 @app.route("/debug/env")
 def debug_env():
     """Debug: show environment and DB info."""
-    if "user_id" not in session:
-        return "Not logged in"
-
-    conn = get_db()
-    c = conn.cursor()
-    c.execute("SELECT version()")
-    version = c.fetchone()[0] if USE_POSTGRES else "SQLite"
-    conn.close()
-
     return f"""<h2>Environment Debug</h2>
     <p>USE_POSTGRES: {USE_POSTGRES}</p>
     <p>DATABASE_URL set: {bool(os.environ.get("DATABASE_URL"))}</p>
-    <p>DB Version: {version}</p>
-    <p>Session user_id: {session.get("user_id", "NOT SET")}</p>
+    <p>DATABASE_URL length: {len(os.environ.get("DATABASE_URL", ""))}</p>
+    <p>Session keys: {list(session.keys()) if session else "No session"}</p>
     <hr>
-    <p><a href="/dashboard">Dashboard</a></p>
-    <p><a href="/settings">Settings</a></p>"""
+    <form action="/login" method="post">
+        <input type="text" name="email" placeholder="email" required>
+        <input type="password" name="password" placeholder="password" required>
+        <button type="submit">Login as test</button>
+    </form>
+    <p><a href="/">Home</a></p>"""
 
 
 @app.route("/api/key")
