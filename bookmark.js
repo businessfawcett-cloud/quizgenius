@@ -535,22 +535,125 @@
                 console.log('Answer:', a);
                 
                 if (found.length > 0) {
-                    // Find actual option elements by text content
-                    var allClickable = document.querySelectorAll('label, li, button, [role="radio"], [role="option"], [class*="choice"], [class*="option"], .rs_preserve, span');
+                    // Find actual option elements - be very specific
                     var optionsFound = [];
                     
-                    for (var i = 0; i < allClickable.length; i++) {
-                        var text = allClickable[i].textContent.trim();
-                        // Check if this element's text matches any of our options
+                    // Method 1: Find radio buttons and click them directly by index
+                    var radios = document.querySelectorAll('input[type="radio"]');
+                    console.log('Found', radios.length, 'radio buttons');
+                    
+                    // Method 2: Try finding spans with choiceText class (McGraw Hill specific)
+                    var choiceSpans = document.querySelectorAll('span.choiceText');
+                    console.log('Found', choiceSpans.length, 'choiceText spans');
+                    
+                    // Method 3: Find labels that contain ONLY the option text (not other text)
+                    var allLabels = document.querySelectorAll('label');
+                    for (var i = 0; i < allLabels.length; i++) {
+                        var text = allLabels[i].textContent.trim();
+                        // Only match if text is EXACTLY one of our options
                         for (var j = 0; j < opts.length; j++) {
-                            if (text === opts[j] || text.toLowerCase() === lowerOpts[j]) {
-                                optionsFound.push({ index: j, element: allClickable[i] });
+                            if (text === opts[j]) {
+                                optionsFound.push({ index: j, element: allLabels[i] });
+                                console.log('Found label for option', j, ':', text);
                                 break;
                             }
                         }
                     }
                     
+                    console.log('Found exact option labels:', optionsFound.length);
+                    
+                    // Click the ones that match our answer
+                    var clicked = false;
+                    found.forEach(function(optIdx) {
+                        for (var i = 0; i < optionsFound.length; i++) {
+                            if (optionsFound[i].index === optIdx) {
+                                console.log('Clicking label:', optionsFound[i].element.textContent.substring(0, 20));
+                                try { 
+                                    optionsFound[i].element.click(); 
+                                    clicked = true;
+                                } catch(e) {}
+                            }
+                        }
+                    });
+                    
+                    // If no labels found, try clicking radio buttons directly
+                    if (!clicked && radios.length > 0) {
+                        found.forEach(function(optIdx) {
+                            if (optIdx < radios.length) {
+                                console.log('Clicking radio button', optIdx);
+                                try { 
+                                    radios[optIdx].click(); 
+                                    clicked = true;
+                                } catch(e) {}
+                            }
+                        });
+                    }
+                    
+                    // If still not clicked, try choiceText spans
+                    if (!clicked && choiceSpans.length > 0) {
+                        found.forEach(function(optIdx) {
+                            if (optIdx < choiceSpans.length) {
+                                var text = choiceSpans[optIdx].textContent.trim();
+                                if (text === opts[optIdx] || text.toLowerCase() === lowerOpts[optIdx]) {
+                                    console.log('Clicking choiceText span', optIdx);
+                                    try { 
+                                        choiceSpans[optIdx].click(); 
+                                        clicked = true;
+                                    } catch(e) {}
+                                }
+                            }
+                        });
+                    }
+                    
+                    if (!clicked) {
+                        console.log('Could not find option to click');
+                        console.log('Options:', opts);
+                        console.log('Found answer indices:', found);
+                    }
+                        if (!label) {
+                            label = radios[i].closest('label');
+                        }
+                        if (!label) {
+                            label = radios[i].parentElement;
+                        }
+                        
+                        if (label) {
+                            var text = label.textContent.trim();
+                            // Only match if the label text is EXACTLY the option (not containing other text)
+                            if (text === opts[i] || text.toLowerCase() === lowerOpts[i]) {
+                                optionsFound.push({ index: i, element: label });
+                            } else if (text.includes(opts[i])) {
+                                // If label contains the option text, try to find the specific element with just that text
+                                var spans = label.querySelectorAll('span, p');
+                                for (var s = 0; s < spans.length; s++) {
+                                    if (spans[s].textContent.trim() === opts[i] || spans[s].textContent.trim().toLowerCase() === lowerOpts[i]) {
+                                        optionsFound.push({ index: i, element: spans[s] });
+                                        break;
+                                    }
+                                }
+                                if (!optionsFound.length || optionsFound[optionsFound.length-1].index !== i) {
+                                    optionsFound.push({ index: i, element: label });
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Method 2: Try finding spans with choiceText class
+                    if (optionsFound.length === 0) {
+                        var choiceSpans = document.querySelectorAll('span.choiceText, .choiceText p, .choiceText span');
+                        for (var i = 0; i < choiceSpans.length; i++) {
+                            var text = choiceSpans[i].textContent.trim();
+                            for (var j = 0; j < opts.length; j++) {
+                                if (text === opts[j] || text.toLowerCase() === lowerOpts[j]) {
+                                    optionsFound.push({ index: j, element: choiceSpans[i] });
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
                     console.log('Found clickable options:', optionsFound.length);
+                    console.log('Options:', opts);
                     
                     // Click the ones that match our answer
                     var clicked = false;
@@ -569,14 +672,431 @@
                     });
                     
                     if (!clicked) {
-                        // Fallback: try clicking by text content directly
-                        for (var i = 0; i < allClickable.length; i++) {
-                            var t = allClickable[i].textContent.trim().toLowerCase();
-                            for (var j = 0; j < found.length; j++) {
-                                if (t === lowerOpts[found[j]]) {
-                                    console.log('Fallback click:', t);
-                                    try { allClickable[i].click(); clicked = true; } catch(e) {}
+                        // Fallback: try clicking radio buttons directly by index
+                        for (var i = 0; i < radios.length && i < opts.length; i++) {
+                            if (found.includes(i)) {
+                                console.log('Fallback radio click:', i);
+                                try { radios[i].click(); clicked = true; } catch(e) {}
+                            }
+                        }
+                    }
+                        if (!label) {
+                            label = radios[i].closest('label');
+                        }
+                        if (!label) {
+                            label = radios[i].parentElement;
+                        }
+                        
+                        if (label) {
+                            var text = label.textContent.trim();
+                            // Only match if the label text is EXACTLY the option (not containing other text)
+                            if (text === opts[i] || text.toLowerCase() === lowerOpts[i]) {
+                                optionsFound.push({ index: i, element: label });
+                            } else if (text.includes(opts[i])) {
+                                // If label contains the option text, try to find the specific element with just that text
+                                var spans = label.querySelectorAll('span, p');
+                                for (var s = 0; s < spans.length; s++) {
+                                    if (spans[s].textContent.trim() === opts[i] || spans[s].textContent.trim().toLowerCase() === lowerOpts[i]) {
+                                        optionsFound.push({ index: i, element: spans[s] });
+                                        break;
+                                    }
                                 }
+                                if (!optionsFound.length || optionsFound[optionsFound.length-1].index !== i) {
+                                    optionsFound.push({ index: i, element: label });
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Method 2: Try finding spans with choiceText class
+                    if (optionsFound.length === 0) {
+                        var choiceSpans = document.querySelectorAll('span.choiceText, .choiceText p, .choiceText span');
+                        for (var i = 0; i < choiceSpans.length; i++) {
+                            var text = choiceSpans[i].textContent.trim();
+                            for (var j = 0; j < opts.length; j++) {
+                                if (text === opts[j] || text.toLowerCase() === lowerOpts[j]) {
+                                    optionsFound.push({ index: j, element: choiceSpans[i] });
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    console.log('Found clickable options:', optionsFound.length);
+                    console.log('Options:', opts);
+                    
+                    // Click the ones that match our answer
+                    var clicked = false;
+                    found.forEach(function(optIdx) {
+                        for (var i = 0; i < optionsFound.length; i++) {
+                            if (optionsFound[i].index === optIdx) {
+                                console.log('Clicking:', optionsFound[i].element.textContent.substring(0, 20));
+                                try { 
+                                    optionsFound[i].element.click(); 
+                                    clicked = true;
+                                } catch(e) {
+                                    try { optionsFound[i].element.parentElement.click(); clicked = true; } catch(e2) {}
+                                }
+                            }
+                        }
+                    });
+                    
+                    if (!clicked) {
+                        // Fallback: try clicking radio buttons directly by index
+                        for (var i = 0; i < radios.length && i < opts.length; i++) {
+                            if (found.includes(i)) {
+                                console.log('Fallback radio click:', i);
+                                try { radios[i].click(); clicked = true; } catch(e) {}
+                            }
+                        }
+                    }
+                        if (!label) {
+                            label = radios[i].closest('label');
+                        }
+                        if (!label) {
+                            label = radios[i].parentElement;
+                        }
+                        
+                        if (label) {
+                            var text = label.textContent.trim();
+                            // Only match if the label text is EXACTLY the option (not containing other text)
+                            if (text === opts[i] || text.toLowerCase() === lowerOpts[i]) {
+                                optionsFound.push({ index: i, element: label });
+                            } else if (text.includes(opts[i])) {
+                                // If label contains the option text, try to find the specific element with just that text
+                                var spans = label.querySelectorAll('span, p');
+                                for (var s = 0; s < spans.length; s++) {
+                                    if (spans[s].textContent.trim() === opts[i] || spans[s].textContent.trim().toLowerCase() === lowerOpts[i]) {
+                                        optionsFound.push({ index: i, element: spans[s] });
+                                        break;
+                                    }
+                                }
+                                if (!optionsFound.length || optionsFound[optionsFound.length-1].index !== i) {
+                                    optionsFound.push({ index: i, element: label });
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Method 2: Try finding spans with choiceText class
+                    if (optionsFound.length === 0) {
+                        var choiceSpans = document.querySelectorAll('span.choiceText, .choiceText p, .choiceText span');
+                        for (var i = 0; i < choiceSpans.length; i++) {
+                            var text = choiceSpans[i].textContent.trim();
+                            for (var j = 0; j < opts.length; j++) {
+                                if (text === opts[j] || text.toLowerCase() === lowerOpts[j]) {
+                                    optionsFound.push({ index: j, element: choiceSpans[i] });
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    console.log('Found clickable options:', optionsFound.length);
+                    console.log('Options:', opts);
+                    
+                    // Click the ones that match our answer
+                    var clicked = false;
+                    found.forEach(function(optIdx) {
+                        for (var i = 0; i < optionsFound.length; i++) {
+                            if (optionsFound[i].index === optIdx) {
+                                console.log('Clicking:', optionsFound[i].element.textContent.substring(0, 20));
+                                try { 
+                                    optionsFound[i].element.click(); 
+                                    clicked = true;
+                                } catch(e) {
+                                    try { optionsFound[i].element.parentElement.click(); clicked = true; } catch(e2) {}
+                                }
+                            }
+                        }
+                    });
+                    
+                    if (!clicked) {
+                        // Fallback: try clicking radio buttons directly by index
+                        for (var i = 0; i < radios.length && i < opts.length; i++) {
+                            if (found.includes(i)) {
+                                console.log('Fallback radio click:', i);
+                                try { radios[i].click(); clicked = true; } catch(e) {}
+                            }
+                        }
+                    }
+                        if (!label) {
+                            label = radios[i].closest('label');
+                        }
+                        if (!label) {
+                            label = radios[i].parentElement;
+                        }
+                        
+                        if (label) {
+                            var text = label.textContent.trim();
+                            // Only match if the label text is EXACTLY the option (not containing other text)
+                            if (text === opts[i] || text.toLowerCase() === lowerOpts[i]) {
+                                optionsFound.push({ index: i, element: label });
+                            } else if (text.includes(opts[i])) {
+                                // If label contains the option text, try to find the specific element with just that text
+                                var spans = label.querySelectorAll('span, p');
+                                for (var s = 0; s < spans.length; s++) {
+                                    if (spans[s].textContent.trim() === opts[i] || spans[s].textContent.trim().toLowerCase() === lowerOpts[i]) {
+                                        optionsFound.push({ index: i, element: spans[s] });
+                                        break;
+                                    }
+                                }
+                                if (!optionsFound.length || optionsFound[optionsFound.length-1].index !== i) {
+                                    optionsFound.push({ index: i, element: label });
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Method 2: Try finding spans with choiceText class
+                    if (optionsFound.length === 0) {
+                        var choiceSpans = document.querySelectorAll('span.choiceText, .choiceText p, .choiceText span');
+                        for (var i = 0; i < choiceSpans.length; i++) {
+                            var text = choiceSpans[i].textContent.trim();
+                            for (var j = 0; j < opts.length; j++) {
+                                if (text === opts[j] || text.toLowerCase() === lowerOpts[j]) {
+                                    optionsFound.push({ index: j, element: choiceSpans[i] });
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    console.log('Found clickable options:', optionsFound.length);
+                    console.log('Options:', opts);
+                    
+                    // Click the ones that match our answer
+                    var clicked = false;
+                    found.forEach(function(optIdx) {
+                        for (var i = 0; i < optionsFound.length; i++) {
+                            if (optionsFound[i].index === optIdx) {
+                                console.log('Clicking:', optionsFound[i].element.textContent.substring(0, 20));
+                                try { 
+                                    optionsFound[i].element.click(); 
+                                    clicked = true;
+                                } catch(e) {
+                                    try { optionsFound[i].element.parentElement.click(); clicked = true; } catch(e2) {}
+                                }
+                            }
+                        }
+                    });
+                    
+                    if (!clicked) {
+                        // Fallback: try clicking radio buttons directly by index
+                        for (var i = 0; i < radios.length && i < opts.length; i++) {
+                            if (found.includes(i)) {
+                                console.log('Fallback radio click:', i);
+                                try { radios[i].click(); clicked = true; } catch(e) {}
+                            }
+                        }
+                    }
+                        if (!label) {
+                            label = radios[i].closest('label');
+                        }
+                        if (!label) {
+                            label = radios[i].parentElement;
+                        }
+                        
+                        if (label) {
+                            var text = label.textContent.trim();
+                            // Only match if the label text is EXACTLY the option (not containing other text)
+                            if (text === opts[i] || text.toLowerCase() === lowerOpts[i]) {
+                                optionsFound.push({ index: i, element: label });
+                            } else if (text.includes(opts[i])) {
+                                // If label contains the option text, try to find the specific element with just that text
+                                var spans = label.querySelectorAll('span, p');
+                                for (var s = 0; s < spans.length; s++) {
+                                    if (spans[s].textContent.trim() === opts[i] || spans[s].textContent.trim().toLowerCase() === lowerOpts[i]) {
+                                        optionsFound.push({ index: i, element: spans[s] });
+                                        break;
+                                    }
+                                }
+                                if (!optionsFound.length || optionsFound[optionsFound.length-1].index !== i) {
+                                    optionsFound.push({ index: i, element: label });
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Method 2: Try finding spans with choiceText class
+                    if (optionsFound.length === 0) {
+                        var choiceSpans = document.querySelectorAll('span.choiceText, .choiceText p, .choiceText span');
+                        for (var i = 0; i < choiceSpans.length; i++) {
+                            var text = choiceSpans[i].textContent.trim();
+                            for (var j = 0; j < opts.length; j++) {
+                                if (text === opts[j] || text.toLowerCase() === lowerOpts[j]) {
+                                    optionsFound.push({ index: j, element: choiceSpans[i] });
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    console.log('Found clickable options:', optionsFound.length);
+                    console.log('Options:', opts);
+                    
+                    // Click the ones that match our answer
+                    var clicked = false;
+                    found.forEach(function(optIdx) {
+                        for (var i = 0; i < optionsFound.length; i++) {
+                            if (optionsFound[i].index === optIdx) {
+                                console.log('Clicking:', optionsFound[i].element.textContent.substring(0, 20));
+                                try { 
+                                    optionsFound[i].element.click(); 
+                                    clicked = true;
+                                } catch(e) {
+                                    try { optionsFound[i].element.parentElement.click(); clicked = true; } catch(e2) {}
+                                }
+                            }
+                        }
+                    });
+                    
+                    if (!clicked) {
+                        // Fallback: try clicking radio buttons directly by index
+                        for (var i = 0; i < radios.length && i < opts.length; i++) {
+                            if (found.includes(i)) {
+                                console.log('Fallback radio click:', i);
+                                try { radios[i].click(); clicked = true; } catch(e) {}
+                            }
+                        }
+                    }
+                        if (!label) {
+                            label = radios[i].closest('label');
+                        }
+                        if (!label) {
+                            label = radios[i].parentElement;
+                        }
+                        
+                        if (label) {
+                            var text = label.textContent.trim();
+                            // Only match if the label text is EXACTLY the option (not containing other text)
+                            if (text === opts[i] || text.toLowerCase() === lowerOpts[i]) {
+                                optionsFound.push({ index: i, element: label });
+                            } else if (text.includes(opts[i])) {
+                                // If label contains the option text, try to find the specific element with just that text
+                                var spans = label.querySelectorAll('span, p');
+                                for (var s = 0; s < spans.length; s++) {
+                                    if (spans[s].textContent.trim() === opts[i] || spans[s].textContent.trim().toLowerCase() === lowerOpts[i]) {
+                                        optionsFound.push({ index: i, element: spans[s] });
+                                        break;
+                                    }
+                                }
+                                if (!optionsFound.length || optionsFound[optionsFound.length-1].index !== i) {
+                                    optionsFound.push({ index: i, element: label });
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Method 2: Try finding spans with choiceText class
+                    if (optionsFound.length === 0) {
+                        var choiceSpans = document.querySelectorAll('span.choiceText, .choiceText p, .choiceText span');
+                        for (var i = 0; i < choiceSpans.length; i++) {
+                            var text = choiceSpans[i].textContent.trim();
+                            for (var j = 0; j < opts.length; j++) {
+                                if (text === opts[j] || text.toLowerCase() === lowerOpts[j]) {
+                                    optionsFound.push({ index: j, element: choiceSpans[i] });
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    console.log('Found clickable options:', optionsFound.length);
+                    console.log('Options:', opts);
+                    
+                    // Click the ones that match our answer
+                    var clicked = false;
+                    found.forEach(function(optIdx) {
+                        for (var i = 0; i < optionsFound.length; i++) {
+                            if (optionsFound[i].index === optIdx) {
+                                console.log('Clicking:', optionsFound[i].element.textContent.substring(0, 20));
+                                try { 
+                                    optionsFound[i].element.click(); 
+                                    clicked = true;
+                                } catch(e) {
+                                    try { optionsFound[i].element.parentElement.click(); clicked = true; } catch(e2) {}
+                                }
+                            }
+                        }
+                    });
+                    
+                    if (!clicked) {
+                        // Fallback: try clicking radio buttons directly by index
+                        for (var i = 0; i < radios.length && i < opts.length; i++) {
+                            if (found.includes(i)) {
+                                console.log('Fallback radio click:', i);
+                                try { radios[i].click(); clicked = true; } catch(e) {}
+                            }
+                        }
+                    }
+                        if (!label) {
+                            label = radios[i].closest('label');
+                        }
+                        if (!label) {
+                            label = radios[i].parentElement;
+                        }
+                        
+                        if (label) {
+                            var text = label.textContent.trim();
+                            // Only match if the label text is EXACTLY the option (not containing other text)
+                            if (text === opts[i] || text.toLowerCase() === lowerOpts[i]) {
+                                optionsFound.push({ index: i, element: label });
+                            } else if (text.includes(opts[i])) {
+                                // If label contains the option text, try to find the specific element with just that text
+                                var spans = label.querySelectorAll('span, p');
+                                for (var s = 0; s < spans.length; s++) {
+                                    if (spans[s].textContent.trim() === opts[i] || spans[s].textContent.trim().toLowerCase() === lowerOpts[i]) {
+                                        optionsFound.push({ index: i, element: spans[s] });
+                                        break;
+                                    }
+                                }
+                                if (!optionsFound.length || optionsFound[optionsFound.length-1].index !== i) {
+                                    optionsFound.push({ index: i, element: label });
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Method 2: Try finding spans with choiceText class
+                    if (optionsFound.length === 0) {
+                        var choiceSpans = document.querySelectorAll('span.choiceText, .choiceText p, .choiceText span');
+                        for (var i = 0; i < choiceSpans.length; i++) {
+                            var text = choiceSpans[i].textContent.trim();
+                            for (var j = 0; j < opts.length; j++) {
+                                if (text === opts[j] || text.toLowerCase() === lowerOpts[j]) {
+                                    optionsFound.push({ index: j, element: choiceSpans[i] });
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    console.log('Found clickable options:', optionsFound.length);
+                    console.log('Options:', opts);
+                    
+                    // Click the ones that match our answer
+                    var clicked = false;
+                    found.forEach(function(optIdx) {
+                        for (var i = 0; i < optionsFound.length; i++) {
+                            if (optionsFound[i].index === optIdx) {
+                                console.log('Clicking:', optionsFound[i].element.textContent.substring(0, 20));
+                                try { 
+                                    optionsFound[i].element.click(); 
+                                    clicked = true;
+                                } catch(e) {
+                                    try { optionsFound[i].element.parentElement.click(); clicked = true; } catch(e2) {}
+                                }
+                            }
+                        }
+                    });
+                    
+                    if (!clicked) {
+                        // Fallback: try clicking radio buttons directly by index
+                        for (var i = 0; i < radios.length && i < opts.length; i++) {
+                            if (found.includes(i)) {
+                                console.log('Fallback radio click:', i);
+                                try { radios[i].click(); clicked = true; } catch(e) {}
                             }
                         }
                     }
