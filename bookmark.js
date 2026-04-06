@@ -192,24 +192,23 @@
                 var lowerOpts = opts.map(function(o) { return o.toLowerCase().trim(); });
                 var lowerA = a.toLowerCase().trim();
                 
-                // For multi-select, be very strict - only match if AI explicitly mentions the option
                 if (isMultiSelect) {
-                    // Split AI answer by commas, periods, or newlines
-                    var answerParts = lowerA.split(/[,\.\n]+/).map(function(s) { return s.trim(); }).filter(function(s) { return s.length > 5; });
-                    
-                    for (var i = 0; i < lowerOpts.length; i++) {
-                        // Check if any answer part contains most of this option
-                        for (var j = 0; j < answerParts.length; j++) {
-                            // Count how many words of the option appear in the answer part
-                            var optWords = lowerOpts[i].split(/\s+/).filter(function(w) { return w.length > 2; });
-                            var matchCount = 0;
+                    // For multi-select, be VERY strict - only match if option appears verbatim in answer
+                    for (var i = 0; i < opts.length; i++) {
+                        // Check if the exact option text appears in the AI response
+                        if (lowerA.includes(lowerOpts[i])) {
+                            found.push(i);
+                        }
+                        // Also check if most of the option words appear together
+                        else {
+                            var optWords = lowerOpts[i].split(/\s+/).filter(function(w) { return w.length > 3; });
+                            var consecutiveMatch = 0;
                             for (var w = 0; w < optWords.length; w++) {
-                                if (answerParts[j].includes(optWords[w])) matchCount++;
+                                if (lowerA.includes(optWords[w])) consecutiveMatch++;
                             }
-                            // If 75%+ of words match, consider it a match
-                            if (matchCount >= optWords.length * 0.75) {
+                            // Require 90%+ of significant words to match
+                            if (consecutiveMatch >= optWords.length * 0.9 && optWords.length > 0) {
                                 found.push(i);
-                                break;
                             }
                         }
                     }
