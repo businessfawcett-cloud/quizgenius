@@ -179,7 +179,7 @@
         xhr.timeout = 8000;
         
         var prompt = isMultiSelect ?
-            'MULTIPLE SELECT - select ALL that apply. Question: ' + qt + ' Options: ' + opts.join(' | ') + ' List the correct answers separated by commas.' :
+            'MULTIPLE SELECT - select ALL that apply. Question: ' + qt + ' Options: ' + opts.join(' | ') + ' List ONLY the correct answers, separated by commas. Do NOT include incorrect options. Just list the correct option texts exactly as written.' :
             'Question: ' + qt + ' Options: ' + opts.join(' | ') + ' Choose the SINGLE correct answer. Just say the answer word.';
         
         xhr.onload = function() {
@@ -193,24 +193,16 @@
                 var lowerA = a.toLowerCase().trim();
                 
                 if (isMultiSelect) {
-                    // For multi-select, be VERY strict - only match if option appears verbatim in answer
+                    // For multi-select, ONLY match if the ENTIRE option text appears in the AI response
                     for (var i = 0; i < opts.length; i++) {
-                        // Check if the exact option text appears in the AI response
-                        if (lowerA.includes(lowerOpts[i])) {
+                        // Must contain the FULL option text, not partial
+                        if (lowerA.indexOf(lowerOpts[i]) !== -1) {
                             found.push(i);
                         }
-                        // Also check if most of the option words appear together
-                        else {
-                            var optWords = lowerOpts[i].split(/\s+/).filter(function(w) { return w.length > 3; });
-                            var consecutiveMatch = 0;
-                            for (var w = 0; w < optWords.length; w++) {
-                                if (lowerA.includes(optWords[w])) consecutiveMatch++;
-                            }
-                            // Require 90%+ of significant words to match
-                            if (consecutiveMatch >= optWords.length * 0.9 && optWords.length > 0) {
-                                found.push(i);
-                            }
-                        }
+                    }
+                    // Limit to max 2 answers for multi-select (most are 2 correct)
+                    if (found.length > 3) {
+                        found = found.slice(0, 2);
                     }
                 } else {
                     // Single choice - use existing strategies
