@@ -192,23 +192,47 @@
                 var lowerOpts = opts.map(function(o) { return o.toLowerCase().trim(); });
                 var lowerA = a.toLowerCase().trim();
                 
-                // Strategy 1: Exact match
-                for (var i = 0; i < lowerOpts.length; i++) {
-                    if (lowerA === lowerOpts[i] || lowerA === '"' + lowerOpts[i] + '"') found.push(i);
-                }
-                // Strategy 2: Word match
-                if (found.length === 0) {
-                    var words = lowerA.replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(function(w) { return w.length > 2; });
+                // For multi-select, be very strict - only match if AI explicitly mentions the option
+                if (isMultiSelect) {
+                    // Split AI answer by commas, periods, or newlines
+                    var answerParts = lowerA.split(/[,\.\n]+/).map(function(s) { return s.trim(); }).filter(function(s) { return s.length > 5; });
+                    
                     for (var i = 0; i < lowerOpts.length; i++) {
-                        for (var j = 0; j < words.length; j++) {
-                            if (lowerOpts[i].includes(words[j])) { found.push(i); break; }
+                        // Check if any answer part contains most of this option
+                        for (var j = 0; j < answerParts.length; j++) {
+                            // Count how many words of the option appear in the answer part
+                            var optWords = lowerOpts[i].split(/\s+/).filter(function(w) { return w.length > 2; });
+                            var matchCount = 0;
+                            for (var w = 0; w < optWords.length; w++) {
+                                if (answerParts[j].includes(optWords[w])) matchCount++;
+                            }
+                            // If 75%+ of words match, consider it a match
+                            if (matchCount >= optWords.length * 0.75) {
+                                found.push(i);
+                                break;
+                            }
                         }
                     }
-                }
-                // Strategy 3: Answer contains option
-                if (found.length === 0) {
+                } else {
+                    // Single choice - use existing strategies
+                    // Strategy 1: Exact match
                     for (var i = 0; i < lowerOpts.length; i++) {
-                        if (lowerA.includes(lowerOpts[i])) found.push(i);
+                        if (lowerA === lowerOpts[i] || lowerA === '"' + lowerOpts[i] + '"') found.push(i);
+                    }
+                    // Strategy 2: Word match
+                    if (found.length === 0) {
+                        var words = lowerA.replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(function(w) { return w.length > 3; });
+                        for (var i = 0; i < lowerOpts.length; i++) {
+                            for (var j = 0; j < words.length; j++) {
+                                if (lowerOpts[i].includes(words[j])) { found.push(i); break; }
+                            }
+                        }
+                    }
+                    // Strategy 3: Answer contains option
+                    if (found.length === 0) {
+                        for (var i = 0; i < lowerOpts.length; i++) {
+                            if (lowerA.includes(lowerOpts[i])) found.push(i);
+                        }
                     }
                 }
                 
