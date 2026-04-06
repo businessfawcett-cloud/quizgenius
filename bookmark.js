@@ -213,25 +213,44 @@
                 }
                 
                 if (found.length > 0) {
-                    var radios = document.querySelectorAll('input[type="radio"], input[type="checkbox"]');
+                    var checkboxes = document.querySelectorAll('input[type="checkbox"]');
+                    var radios = document.querySelectorAll('input[type="radio"]');
+                    var labels = document.querySelectorAll('label');
                     var clicked = false;
                     
-                    // Try clicking radio buttons by index
+                    // For each found option, try to click it
                     found.forEach(function(idx) {
-                        if (idx < radios.length) {
-                            try { radios[idx].click(); clicked = true; } catch(e) {}
+                        var answerText = opts[idx];
+                        
+                        // Try finding label with exact text match
+                        for (var i = 0; i < labels.length; i++) {
+                            var labelText = labels[i].textContent.trim();
+                            if (labelText === answerText || labelText.toLowerCase() === answerText.toLowerCase()) {
+                                try { labels[i].click(); clicked = true; console.log('Clicked label:', answerText); } catch(e) {}
+                                break;
+                            }
+                        }
+                        
+                        // Try finding checkbox/radio whose parent contains the text
+                        if (!clicked) {
+                            var inputs = checkboxes.length > 0 ? checkboxes : radios;
+                            for (var i = 0; i < inputs.length; i++) {
+                                var parent = inputs[i].parentElement;
+                                if (parent && parent.textContent.trim().toLowerCase().includes(answerText.toLowerCase())) {
+                                    try { inputs[i].click(); clicked = true; console.log('Clicked input:', answerText); } catch(e) {}
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        // Fallback: click by index
+                        if (!clicked) {
+                            var inputs = checkboxes.length > 0 ? checkboxes : radios;
+                            if (idx < inputs.length) {
+                                try { inputs[idx].click(); clicked = true; console.log('Clicked by index:', idx); } catch(e) {}
+                            }
                         }
                     });
-                    
-                    // Try clicking labels
-                    if (!clicked) {
-                        var labels = document.querySelectorAll('label');
-                        found.forEach(function(idx) {
-                            if (idx < labels.length) {
-                                try { labels[idx].click(); clicked = true; } catch(e) {}
-                            }
-                        });
-                    }
                     
                     setTimeout(function() {
                         submitConfidence();
